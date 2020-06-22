@@ -1,0 +1,421 @@
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+
+	/* Let's build something visual */
+	.circle {
+		width: 200px;
+		height: 200px;
+		background-color: blue;
+		border: .5em solid #666;
+		border-radius: 135px;
+		position: relative;
+	}
+
+	/* Now... let's animate */
+	#simpleSlide {	
+		animation-name: slideLeft; /* Referenced by @keyframe */
+		animation-duration: 3s; /* How long the animation takes for 1 cycle */
+	}
+
+	@keyframes slideLeft {
+		from {
+			left: calc(100% - 225px);
+		}
+
+		to {
+			left: 0;
+		}
+	}
+
+	#direction-reverse {
+		animation-name: dir-reverse;
+		animation-duration: 3s;
+		animation-direction: reverse;
+	}
+
+	@keyframes dir-reverse {
+		from {
+			left: calc(100% - 225px);
+		}
+
+		to {
+			left: 0;
+		}
+	}
+
+	#direction-alternate {
+		animation-name: dir-alternate;
+		animation-duration: 3s;
+		animation-direction: alternate;
+		animation-iteration-count: infinite;
+	}
+
+	@keyframes dir-alternate {
+		from {
+			left: calc(100% - 225px);
+		}
+
+		to {
+			left: 0;
+		}
+	}
+
+
+	/* Some Thermometers */
+	.thermometer-vertical {
+		height: 300px;
+		width: 30px;
+		position: relative;
+		background: #888;
+		-moz-border-radius: 4px;
+		-webkit-border-radius: 4px;
+		border-radius: 4px;
+		padding: 0px;
+		box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+		/*margin: 0 auto .5em;*/
+		margin: 0 50px;
+		display: inline-block;
+	}
+	.thermometer-vertical .thermometer-progress {
+		height:0%;
+		width:100%;
+		background-color: rgb(40,135,26);
+		position: absolute;
+		bottom:0;
+		left:0;
+		margin-bottom: 0;
+		border-radius: 4px;
+		overflow: initial;
+		white-space: nowrap;
+		font-family: Trebuchet MS;
+		font-weight: bold;
+	}
+	.thermometer-vertical .thermometer-progress > span {
+		display: inline-block;
+		position: absolute;
+		left: 40px;
+		background-color: white;
+	}
+
+	#therm-1 > .thermometer-progress {
+		animation-name: therm-1;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: ease;
+	}
+
+	@keyframes therm-1 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+	#therm-2 > .thermometer-progress {
+		animation-name: therm-2;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: ease-in;
+	}
+
+	@keyframes therm-2 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+	#therm-3 > .thermometer-progress {
+		animation-name: therm-3;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: ease-out;
+	}
+
+	@keyframes therm-3 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+	#therm-4 > .thermometer-progress {
+		animation-name: therm-4;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: ease-in-out;
+	}
+
+	@keyframes therm-4 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+	#therm-5 > .thermometer-progress {
+		animation-name: therm-5;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: linear;
+	}
+
+	@keyframes therm-5 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+	#therm-6 > .thermometer-progress {
+		animation-name: therm-6;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: step-start;
+	}
+
+	@keyframes therm-6 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+	#therm-7 > .thermometer-progress {
+		animation-name: therm-7;
+		animation-duration: 4s;
+		animation-fill-mode: both;
+		animation-timing-function: step-end;
+	}
+
+	@keyframes therm-7 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 75%;
+		}
+	}
+
+
+	/* The big boxes */
+	.outside-box {
+		width: 100%;
+		height: 250px;
+		background-color: green;
+	}
+
+	.inside-box {
+		width: 50%;
+		height: 250px;
+		background-color: blue;
+
+		animation-name: moving-box;
+		animation-duration: 4s;
+		animation-iteration-count: infinite;
+		animation-direction: alternate;
+		animation-timing-function: ease-in-out;
+	}
+
+	.inside-box:hover {
+		animation-play-state: paused;
+	}
+
+	@keyframes moving-box {
+		from {
+			width: 0;
+		}
+
+		to {
+			width: 100%;
+		}
+	}
+</style>
+
+<h1>Week 1</h1>
+<h2>Animations Using CSS</h2>
+
+<p>
+	There is a CSS property <code>animation</code>. It has several sub-properties:
+</p>
+<ul>
+	<li>
+		<code>animation-name</code>
+	</li>
+	<li>
+		<code>animation-duration</code>
+	</li>
+	<li>
+		<code>animation-timing-function</code>
+	</li>
+	<li>
+		<code>animation-delay</code>
+	</li>
+	<li>
+		<code>animation-iteration-count</code>
+	</li>
+	<li>
+		<code>animation-direction</code>
+	</li>
+	<li>
+		<code>animation-fill-mode</code>
+	</li>
+	<li>
+		<code>animatin-play-state</code>
+	</li>
+</ul>
+
+<h3>Examples</h3>
+<h4>Simple Keyframe Adjustments</h4>
+<p>
+	Here is an element that has an animation that uses <code>@keyframes</code> to animate the CSS <code>left</code> attribute from the 100% - 225px (the difference to prevent overflow) to 0. It happens over 3 seconds which is set with the CSS <code>animation-duration</code> attribute.
+</p>
+
+<div class="container">
+	<div class="circle" id="simpleSlide"></div>
+</div>
+<hr />
+
+<h4>Adding Directions</h4>
+<ul>
+	<li><code>normal</code></li>
+	<li><code>reverse</code></li>
+	<li><code>alternate</code> --> The <code>animation-iteration-count</code> needs to be greater than 1 in order to see any difference.</li>
+	<li><code>alternate-reverse</code> --> The <code>animation-iteration-count</code> needs to be greater than 1 in order to see any difference.</li>
+</ul>
+<p>
+	Reverse the animation:<br />
+	<code>animation-direction: reverse;</code>
+</p>
+<div class="container">
+	<div class="circle" id="direction-reverse"></div>
+</div>
+
+<p>
+	Reverse the animation:<br />
+	<code>animation-direction: alternate;</code><br />
+	<code>animation-iteration-count: infinite;</code>
+</p>
+<div class="container">
+	<div class="circle" id="direction-alternate"></div>
+</div>
+<hr />
+
+<h4>Looking at Timing Functions</h4>
+<ul>
+	<li><code>ease</code></li>
+	<li><code>ease-in</code></li>
+	<li><code>ease-out</code></li>
+	<li><code>ease-in-out</code></li>
+	<li><code>linear</code></li>
+	<li><code>step-start</code></li>
+	<li><code>step-end</code></li>
+</ul>
+
+<p>
+	This example also makes use of another sub-propert: <code>animation-fill-mode</code>. It is set to the value<code>both</code> as a quick way to keep the style of the animation. Since the height starts at 0, without the <code>animation-fill-mode: both;</code>, then after the animation the height would jump back to 0. This can be seen in first <em>Adding Directions</em> example. After the circle moves to the right, it jumps back to the left. Truthfully, the reason the very first example (<em>Simple Keyframe Adjustments</em>) does not do this is because I didn't know there was a property at the time of writing. So I purposefully made it start on the right and move left. The CSS  for the circle defaults to the left. The animation from is what kicked it to the right at the very beginning. After the animation ends, it jumps back to the default CSS for the circle because I did not set the <code>animation-fill-mode</code> sub-property.
+</p>
+
+<p>
+	These keyword values for the property are all presets of the <code>cubic-bezier(p1, p2, p3, p4)</code> function. So you can always use <code>animation-fill-mode: cubic-bezier(a, b, c, d);</code>.
+</p>
+
+<div class="container">
+	<div id="therm-1" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				ease
+			</span>
+		</div>
+	</div>
+	<div id="therm-2" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				ease-in
+			</span>
+		</div>
+	</div>
+	<div id="therm-3" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				ease-out
+			</span>
+		</div>
+	</div>
+	<div id="therm-4" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				ease-in-out
+			</span>
+		</div>
+	</div>
+	<div id="therm-5" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				linear
+			</span>
+		</div>
+	</div>
+	<div id="therm-6" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				step-start
+			</span>
+		</div>
+	</div>
+	<div id="therm-7" class="thermometer-vertical">
+		<div class="thermometer-progress">
+			<span>
+				step-end
+			</span>
+		</div>
+	</div>
+</div>
+<hr />
+
+<h4>Did Someone Say Pause?</h4>
+<ul>
+	<li><code>paused</code></li>
+	<li><code>running</code></li>
+</ul>
+<p>
+	The <code>animation-play-state</code> sub-property sets whether an animation is running or paused. The example below has the inside-box being animated. It also sets <code>animation-play-state: paused;</code> on hover for the inside box <code>.inside-box:hover { animation-play-state: paused; }</code>. When you remove the curser from the inside box (blue box) then the animation resumes.
+</p>
+
+<div class="container">
+	<div class="outside-box">
+		<div class="inside-box"></div>
+	</div>
+</div>
