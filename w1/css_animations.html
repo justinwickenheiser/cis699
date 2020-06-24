@@ -10,6 +10,14 @@
 		border: 1px solid rgb(108,109,105);
 		font-size: 11px;
 	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
 	.container {
 		margin-bottom: 1em;
 	}
@@ -262,6 +270,107 @@
 			width: 100%;
 		}
 	}
+
+	/* The big boxes */
+	.outside-box-2 {
+		width: 100%;
+		height: 250px;
+		background-color: black;
+	}
+
+	.inside-box-2 {
+		width: 50%;
+		height: 250px;
+
+		animation-name: moving-box-2;
+		animation-duration: 4s;
+		animation-iteration-count: infinite;
+		animation-direction: alternate;
+		animation-timing-function: ease-in-out;
+	}
+
+	@keyframes moving-box-2 {
+		from {
+			width: 0;
+		}
+
+		25% {
+			background-color: red;
+		}
+
+		50% {
+			background-color: orange;
+		}
+
+		75% {
+			background-color: yellow;
+		}
+
+		100% {
+			width: 100%;
+			background-color: green;
+		}
+	}
+
+	.loading-dot-cover {
+		width: 22px;
+		height: 22px;
+		background-color: white;
+		display: inline-block;
+		position: absolute;
+		left: .5em;
+	}
+
+	.loading-dot {
+		width: 20px;
+		height: 20px;
+		background-color: red;
+		border: 1px solid #666;
+		border-radius: 10px;
+		display: inline-block;
+		position: absolute;
+		left: .5em;
+
+		animation-name: load-horizontally;
+		animation-duration: 10s;
+		animation-timing-function: steps(100, end);
+		animation-iteration-count: infinite;
+	}
+
+	.loading-dot.dot-1 {
+		/* The default color is set in the .loading-dot definition */
+		/* No delay is needed because it is the first one */
+	}
+	.loading-dot.dot-2 {
+		background-color: orange;
+		animation-delay: 1s;
+	}
+	.loading-dot.dot-3 {
+		background-color: yellow;
+		animation-delay: 2s;
+	}
+	.loading-dot.dot-4 {
+		background-color: green;
+		animation-delay: 3s;
+	}
+	.loading-dot.dot-5 {
+		background-color: blue;
+		animation-delay: 4s;
+	}
+	.loading-dot.dot-6 {
+		background-color: indigo;
+		animation-delay: 5s;
+	}
+	.loading-dot.dot-7 {
+		background-color: violet;
+		animation-delay: 6s;
+	}
+
+	@keyframes load-horizontally {
+		100% {
+			left: 800px;
+		}
+	}
 </style>
 
 <h1>Week 1</h1>
@@ -303,9 +412,36 @@
 	Here is an element that has an animation that uses <code>@keyframes</code> to animate the CSS <code>left</code> attribute from the 100% - 225px (the difference to prevent overflow) to 0. It happens over 3 seconds which is set with the CSS <code>animation-duration</code> attribute.
 </p>
 
+<em>You may need to refresh the browser to see this animation, as it only plays once.</em>
 <div class="container">
 	<div class="circle" id="simpleSlide"></div>
 </div>
+<p class="codeblock">
+	/* Let's build something visual */<br />
+	.circle {<br />
+		&emsp;&emsp;width: 200px;<br />
+		&emsp;&emsp;height: 200px;<br />
+		&emsp;&emsp;background-color: blue;<br />
+		&emsp;&emsp;border: .5em solid #666;<br />
+		&emsp;&emsp;border-radius: 135px;<br />
+		&emsp;&emsp;position: relative;<br />
+	}<br />
+	<br />
+	/* Now... let's animate */<br />
+	#simpleSlide {<br />
+		&emsp;&emsp;animation-name: slideLeft; /* Referenced by @keyframe */ <br />
+		&emsp;&emsp;animation-duration: 3s; /* How long the animation takes for 1 cycle */ <br />
+	}<br />
+	<br />
+	@keyframes slideLeft {<br />
+		&emsp;&emsp;from {<br />
+			&emsp;&emsp;&emsp;&emsp;left: calc(100% - 225px);<br />
+		&emsp;&emsp;}<br />
+		&emsp;&emsp;to {<br />
+			&emsp;&emsp;&emsp;&emsp;left: 0;<br />
+		&emsp;&emsp;}<br />
+	}
+</p>
 <hr />
 
 <h4>Adding Directions</h4>
@@ -319,6 +455,7 @@
 	Reverse the animation:<br />
 	<code>animation-direction: reverse;</code>
 </p>
+<em>You may need to refresh the browser to see this animation, as it only plays once.</em>
 <div class="container">
 	<div class="circle" id="direction-reverse"></div>
 </div>
@@ -352,6 +489,7 @@
 	These keyword values for the property are all presets of the <code>cubic-bezier(p1, p2, p3, p4)</code> function. So you can always use <code>animation-fill-mode: cubic-bezier(a, b, c, d);</code>.
 </p>
 
+<em>You may need to refresh the browser to see this animation, as it only plays once.</em>
 <div class="container">
 	<div id="therm-1" class="thermometer-vertical">
 		<div class="thermometer-progress">
@@ -405,7 +543,7 @@
 </div>
 <hr />
 
-<h4>Did Someone Say Pause?</h4>
+<h4>Do We Need To Pause A Minute?</h4>
 <ul>
 	<li><code>paused</code></li>
 	<li><code>running</code></li>
@@ -419,3 +557,72 @@
 		<div class="inside-box"></div>
 	</div>
 </div>
+<hr />
+
+<h4>@Keyframes</h4>
+<p>
+	Keyframes use a percentage value to indicate the time during an animation sequence. It turns out, that the <code>from</code> and <code>to</code> keywords are really just aliases for 0% and 100% respectively. You can even add several additional keyframes to describe steps between the start and end of the animation. The example below builds off the previous example where the width is moving from 0% to 100%, but I am adding additional keyframes every 25% to change the background color. Now the inside box will change colors as it animates.
+</p>
+
+<div class="container">
+	<div class="outside-box-2">
+		<div class="inside-box-2"></div>
+	</div>
+</div>
+
+<p class="codeblock">
+	.inside-box-2 {<br />
+		&emsp;&emsp;width: 50%;<br />
+		&emsp;&emsp;height: 250px;<br />
+		<br />
+		&emsp;&emsp;animation-name: moving-box-2;<br />
+		&emsp;&emsp;animation-duration: 4s;<br />
+		&emsp;&emsp;animation-iteration-count: infinite;<br />
+		&emsp;&emsp;animation-direction: alternate;<br />
+		&emsp;&emsp;animation-timing-function: ease-in-out;<br />
+	}<br />
+	<br />
+	@keyframes moving-box-2 {<br />
+		&emsp;&emsp;from {<br />
+			&emsp;&emsp;&emsp;&emsp;width: 0;<br />
+		&emsp;&emsp;}<br />
+		<br />
+		&emsp;&emsp;25% {<br />
+			&emsp;&emsp;&emsp;&emsp;background-color: red;<br />
+		&emsp;&emsp;}<br />
+		<br />
+		&emsp;&emsp;50% {<br />
+			&emsp;&emsp;&emsp;&emsp;background-color: orange;<br />
+		&emsp;&emsp;}<br />
+		<br />
+		&emsp;&emsp;75% {<br />
+			&emsp;&emsp;&emsp;&emsp;background-color: yellow;<br />
+		&emsp;&emsp;}<br />
+		<br />
+		&emsp;&emsp;100% {<br />
+			&emsp;&emsp;&emsp;&emsp;width: 100%;<br />
+			&emsp;&emsp;&emsp;&emsp;background-color: green;<br />
+		&emsp;&emsp;}<br />
+	}
+</p>
+<hr />
+
+<h4>Trying Something Fun</h4>
+<div class="container" style="padding-bottom: 22px;">
+	<div class="loading-dot dot-1"></div>
+	<div class="loading-dot dot-2"></div>
+	<div class="loading-dot dot-3"></div>
+	<div class="loading-dot dot-4"></div>
+	<div class="loading-dot dot-5"></div>
+	<div class="loading-dot dot-6"></div>
+	<div class="loading-dot dot-7"></div>
+	<div class="loading-dot-cover"></div>
+</div>
+
+<p>
+	This little loading sequence utilizes one animation (<em>load-horizontally</em>). There are 7 dots, each with a unique class (although an ID might have been more appropriate). The unique class references the animation and sets a different <code>animation-delay</code> based on where the dot falls in the order. This animation is also making use of the steps function for the <code>animation-timing-function</code>: <code>animation-timing-function: steps(100, end);</code>. This means there will be 100 evenly divided keyframes over the course of the <code>animation-duration</code>, which in this example is set to 10 seconds.
+</p>
+<p>
+	There is only one keyframe defined for this example, 100%. I do not specify the 0%, so the default CSS is used to start with. The base class <code>loading-dot</code> defined the shape of the dot and set the positions to absolute so all the dots were perfectly on top of each other. This prevented the need to specify a <code>left: <em>#</em> px;</code> for each unique dot class.
+</p>
+<hr />
