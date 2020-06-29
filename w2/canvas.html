@@ -1,0 +1,179 @@
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+	canvas {
+		border: 1px solid black;
+	}
+</style>
+
+<h1>HTML 5 Canvas Element & 2D Rendering</h1>
+
+<p>
+	There are 2 main attributes: <code>width</code> and <code>height</code><br />
+	You must also include the closing tag.<br />
+	There are also maximum canvas sizes for the <code>width</code> and <code>height</code>, and they are dependent on the browser.
+</p>
+
+<canvas></canvas>
+
+<h2>Working with a Canvas</h2>
+<p>
+	Once a canvas element is created, you use Javascript to get a drawing <em>context</em> using <code>HTMLCanvasElement.getContext()</code> and to start drawing.
+</p>
+<p class="codeblock">
+	const canvas = document.querySelector('canvas');<br />
+	const ctx = canvas.getContext('2d');
+</p>
+
+<p>
+	In this example, the '2d' context creates a <code>CanvasRenderingContext2D</code> object that represents two-dimensional rendering.
+</p>
+
+<hr />
+
+<h3>Starting Simple</h3>
+<p>
+	Canvas only supports 2 shapes: rectangles and paths. Creating a rectangle is the easiest place to start. We can draw a rectangle using the <code>fillRect(x, y, width, height)</code> function.
+</p>
+<p class="codeblock">
+	const canvas = document.querySelector('canvas');<br />
+	const ctx = canvas.getContext('2d');<br />
+	ctx.fillStyle = 'blue';<br />
+	ctx.fillRect(50, 100, 85, 25);<br />
+</p>
+<canvas id="example1"></canvas>
+
+<p>
+	It is worth noting that <code>fillRect()</code> actually draws/renders the shape, so the <code>fillStyle</code> must be set prior, otherwise it will not be applied. Also, because we draw the shape using <code>fillRect()</code>, then we can create multiple simply by calling the funtion again.
+</p>
+<p class="codeblock">
+	const canvas = document.querySelector('canvas');<br />
+	const ctx = canvas.getContext('2d');<br />
+	ctx.fillStyle = 'blue';<br />
+	ctx.fillRect(50, 100, 85, 25);<br />
+	<br />
+	ctx.strokeStyle = rgba(28, 174, 202, .8);<br />
+	ctx.strokeRect(75, 85, 25, 50);<br />
+</p>
+<canvas id="example2"></canvas>
+<p>
+	This example uses <code>strokeRect</code> and <code>strokeStyle</code> to create an outlined rectangle instead of a filled in one.
+</p>
+
+<h3>The Path of Least Resistance</h3>
+<p>
+	The second shape that the Canvas understands are paths. There is a lot to digest here, so perhaps "Least Resistance" is a bold-faced lie... Sorry.
+</p>
+<p>
+	All paths start with <code>beginPath()</code>. From there, there are several ways to moving the invisible "pen" that either draws a line or just relocates the "pen". After everything is drawn, you can either <code>fill()</code> the shape or outline the shape using <code>stroke()</code>.
+</p>
+<p class="codeblock">
+	const canvas = document.querySelector('canvas');<br />
+	const ctx = canvas.getContext('2d');<br />
+	<br />
+	ctx.beginPath();<br />
+	ctx.moveTo(50, 25); // pick up the "pen" and move it somewhere else<br />
+	ctx.lineTo(50, 125); // draw a line down 100px<br />
+	ctx.lineTo(25, 75); // draw a line up and to the left<br />
+	ctx.fill(); // fill in the shape.<br />
+	<br />
+	ctx.moveTo(100, 25); // pick up the "pen" and move it somewhere else<br />
+	ctx.lineTo(100, 125); // draw a line down 100px<br />
+	ctx.lineTo(75, 75); // draw a line up and to the left<br />
+	ctx.lineTo(100, 25); // return to the start<br />
+	ctx.stroke(); // create an outline<br />
+</p>
+<canvas id="example3"></canvas>
+<p>
+	If you look at the first path where we filled the shape, we only created 2 lines. The <code>fill()</code> function automatically closes the path. The second shape where we created an outline, we had to make sure we closed the path because <code>stroke()</code> doesn't do that for us.
+</p>
+
+<strong>Curves</strong>
+<p>
+	Oh boy... I don't really understand bezier curves that much, but we can have <em>cubic</em> and <em>quadratic</em> bexier curves.
+</p>
+<p class="codeblock">
+	const canvas = document.querySelector('canvas');<br />
+	const ctx = canvas.getContext('2d');<br />
+	<br />
+	// Cubic --> top curve<br />
+	ctx.beginPath();<br />
+	ctx.moveTo(50, 50); // pick up the "pen" and move it somewhere else<br />
+	ctx.bezierCurveTo(60,80, 100,10, 200, 100); // Magic curve<br />
+	ctx.stroke(); // make the stroke.<br />
+	<br />
+	// Quadratic --> bottom curve<br />
+	ctx.moveTo(50, 75); // pick up the "pen" and move it somewhere else<br />
+	ctx.quadraticCurveTo(100,125, 15, 100); // Magic curve<br />
+	ctx.stroke(); // create an outline<br />
+</p>
+<canvas id="example4"></canvas>
+
+
+
+<script type="text/javascript">
+	// Example 1
+	const canvas = document.getElementById('example1');
+	const ctx = canvas.getContext('2d');
+	ctx.fillStyle = 'blue';
+	ctx.fillRect(50, 100, 85, 25);
+
+	// Example 2
+	const canvas2 = document.getElementById('example2');
+	const ctx2 = canvas2.getContext('2d');
+	ctx2.fillStyle = 'blue';
+	ctx2.fillRect(50, 100, 85, 25);
+
+	ctx2.strokeStyle = 'rgba(28, 174, 202, .8)';
+	ctx2.strokeRect(75, 85, 25, 50);
+
+	// Example 3
+	const canvas3 = document.getElementById('example3');
+	const ctx3 = canvas3.getContext('2d');
+
+	ctx3.beginPath();
+	ctx3.moveTo(50, 25); // pick up the "pen" and move it somewhere else
+	ctx3.lineTo(50, 125); // draw a line down 100px
+	ctx3.lineTo(25, 75); // draw a line up and to the left
+	ctx3.fill(); // fill in the shape
+
+	ctx3.moveTo(100, 25); // pick up the "pen" and move it somewhere else
+	ctx3.lineTo(100, 125); // draw a line down 100px
+	ctx3.lineTo(75, 75); // draw a line up and to the left
+	ctx3.lineTo(100, 25); // return to the start
+	ctx3.stroke(); // create an outline
+
+	// Example 4
+	const canvas4 = document.getElementById('example4');
+	const ctx4 = canvas4.getContext('2d');
+
+	// Cubic<br />
+	ctx4.beginPath();
+	ctx4.moveTo(50, 50); // pick up the "pen" and move it somewhere else
+	ctx4.bezierCurveTo(60,80, 100,10, 200, 100); // Magic curve
+	ctx4.stroke(); // make the stroke.
+	// Quadratic
+	ctx4.moveTo(50, 75); // pick up the "pen" and move it somewhere else
+	ctx4.quadraticCurveTo(100,125, 15, 100); // Magic curve
+	ctx4.stroke(); // create an outline
+</script>
