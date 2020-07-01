@@ -79,6 +79,7 @@
 <p>
 	This example uses <code>strokeRect</code> and <code>strokeStyle</code> to create an outlined rectangle instead of a filled in one.
 </p>
+<hr />
 
 <h3>The Path of Least Resistance</h3>
 <p>
@@ -108,7 +109,7 @@
 	If you look at the first path where we filled the shape, we only created 2 lines. The <code>fill()</code> function automatically closes the path. The second shape where we created an outline, we had to make sure we closed the path because <code>stroke()</code> doesn't do that for us.
 </p>
 
-<strong>Curves</strong>
+<h3>Curves</h3>
 <p>
 	Oh boy... I don't really understand bezier curves that much, but we can have <em>cubic</em> and <em>quadratic</em> bexier curves.
 </p>
@@ -128,6 +129,31 @@
 	ctx.stroke(); // create an outline<br />
 </p>
 <canvas id="example4"></canvas>
+
+<p>
+	<strong>Arcs</strong><br />
+	There are <code>arc()</code> and <code>arcTo()</code> functions. <code>arc(x, y, radius, startAngle, endAngle, anticlockwise)</code> draws an arc centered at (x,y) with a given radius. The <code>startAngle</code> and <code>endAngle</code> are measured in radians from the x-axis. For anyone who doesn't remember radians, like myself, here is a quick Degrees -> Radians conversion in Javascript: <code>radians = (Math.PI/180)*degress</code>
+</p>
+
+<canvas id="example5"></canvas>
+<p>
+	This examples both arcs start with at angle 0. The first one stops at 90 degrees. It is important to note that it doesn't stop after moving 90 degrees, the 90 degrees is at the bottom of the circle. If the arc was made with <code>anticlockwise = true</code>, then we would see the inverse of the circle where 3/4 of it is completed.
+</p>
+<p>
+	The "pen" is <code>moveTo()</code> a different point, and that same point is used as the center of the <code>arc()</code> function. So why is there a line from the center to startAngle? It appears that the "pen" has to be moved to the startAngle coordinate. So if you want to avoid having that radius line drawn, you will have to calculate the offset for the <code>moveTo()</code> coordinate.
+</p>
+<p>
+	What about the <code>arcTo()</code> function? That takes 5 paramters <code>arcTo(x1, y1, x2, y2, radius)</code>. It is described conceptually in the docs as <blockquote>"One way to think about arcTo() is to imagine two straight segments: one from the starting point to a first control point, and another from there to a second control point. Without arcTo(), these two segments would form a sharp corner: arcTo() creates a circular arc that fits this corner and smooths is out. In other words, the arc is tangential to both segments."<br />
+	<a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arcTo">https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arcTo</a></blockquote>
+</p>
+<canvas id="example6" width="500" height="200"></canvas>
+<p>
+	I am struggling with this function. Where the end of the arcTo lands is not necessarily the same coordinate that was provided as control point 2. So the long diagonal line, I thought was going to be a straight line going horizontally across. I've determined I do not like this function.
+</p>
+<hr />
+
+<h3>Drawing Some Shapes</h3>
+<canvas id="example7" width="500"></canvas>
 
 
 
@@ -176,4 +202,65 @@
 	ctx4.moveTo(50, 75); // pick up the "pen" and move it somewhere else
 	ctx4.quadraticCurveTo(100,125, 15, 100); // Magic curve
 	ctx4.stroke(); // create an outline
+
+	// Example 5
+	const canvas5 = document.getElementById('example5');
+	const ctx5 = canvas5.getContext('2d');
+
+	ctx5.beginPath();
+	ctx5.arc(75, 75, 25, 0, (Math.PI/180)*90, false );
+	ctx5.moveTo(150, 75);
+	ctx5.arc(150, 75, 25, 0, (2*Math.PI), false );
+	ctx5.stroke(); // create an outline
+
+	// Example 6
+	const canvas6 = document.getElementById('example6');
+	const ctx6 = canvas6.getContext('2d');
+
+	ctx6.beginPath();
+	ctx6.moveTo(25, 25);
+	ctx6.arcTo(125, 25, 75, 150, 40);
+	ctx6.lineTo(300, 150);
+	ctx6.stroke();
+
+	// Example 7
+	const canvas7 = document.getElementById('example7');
+	const ctx7 = canvas7.getContext('2d');
+
+	ctx7.beginPath();
+	ctx7.moveTo(25, 100);
+	ctx7.lineTo(25, 150);
+	ctx7.lineTo(75, 150);
+	ctx7.lineTo(75, 100);
+	ctx7.stroke();
+	// Roof
+	ctx7.fillStyle = 'green';
+	ctx7.beginPath();
+	ctx7.moveTo(15, 100);
+	ctx7.lineTo(50, 75);
+	ctx7.lineTo(85, 100);
+	ctx7.lineTo(15, 100);
+	ctx7.fill();
+	// Door
+	ctx7.fillStyle = 'blue';
+	ctx7.beginPath();
+	ctx7.moveTo(35, 150);
+	ctx7.lineTo(35, 125);
+	ctx7.lineTo(50, 125);
+	ctx7.lineTo(50, 150);
+	ctx7.fill();
+	// Window
+	ctx7.strokeStyle = 'red';
+	ctx7.beginPath();
+	ctx7.moveTo(55, 110);
+	ctx7.lineTo(55, 125);
+	ctx7.lineTo(70, 125);
+	ctx7.lineTo(70, 110);
+	ctx7.lineTo(55, 110);
+	// cross section
+	ctx7.moveTo(63, 110);
+	ctx7.lineTo(63, 125);
+	ctx7.moveTo(55, 118);
+	ctx7.lineTo(70, 118);
+	ctx7.stroke();
 </script>
