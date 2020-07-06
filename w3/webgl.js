@@ -51,10 +51,15 @@ function initBuffers(gl) {
 
 	// create an array of positions for the square.
 	const positions = [
+		// Square
 		-1.0,  1.0,
 		1.0,  1.0,
 		-1.0, -1.0,
 		1.0, -1.0,
+		// Triangle
+		-10.0, -1.0,
+		-8.0, -1.0,
+		-9.0, 1.0,
 	];
 
 	// Now pass the list of positions into WebGL to build the
@@ -78,12 +83,12 @@ function drawScene(gl, programInfo, buffers) {
 
 	// Create a perspective matrix, a special matrix that is
 	// used to simulate the distortion of perspective in a camera.
-	// Our field of view is 45 degrees, with a width/height
+	// Our field of view is 90 degrees, with a width/height
 	// ratio that matches the display size of the canvas
 	// and we only want to see objects between 0.1 units
 	// and 100 units away from the camera.
 
-	const fieldOfView = 45 * Math.PI / 180;   // in radians
+	const fieldOfView = 90 * Math.PI / 180;   // in radians
 	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 	const zNear = 0.1;
 	const zFar = 100.0;
@@ -143,6 +148,11 @@ function drawScene(gl, programInfo, buffers) {
 		gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
 	}
 
+	{
+		const offset = 4;
+		const vertexCount = 3;
+		gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+	}
 }
 
 
