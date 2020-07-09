@@ -1,0 +1,167 @@
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-full.js"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script type="text/javascript">
+	function getPoints(num, circle) {
+		// This will calculate the degrees between each point for num number of points on the circle.
+		var degreesDelta = 360 / num;
+		var nextPointDegree = 0;
+		var rtrVal = []; // Return an array of points
+
+		for (var i = 0; i < num; i++) {
+			rtrVal.push( findPointOnCircle(circle.center.x, circle.center.y, circle.radius, nextPointDegree) );
+			
+			// move to the next point offset
+			nextPointDegree += degreesDelta;
+		}
+
+		return rtrVal;
+	}
+
+	// Given the origin point of the circle, its radius and the angle in Radians (degrees * Math.PI / 180)
+	// it returns the a point object showing the x,y coordinates of the point on a circle.
+	// Reference: https://www.coderslexicon.com/code/59/
+	function findPointOnCircle(originX, originY , radius, degrees) {
+		var angleRadians = (degrees * Math.PI / 180);
+		var newX = radius * Math.cos(angleRadians) + originX
+		var newY = radius * Math.sin(angleRadians) + originY
+
+		return {x : newX, y : newY}
+	}
+</script>
+
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+	canvas {
+		border: 1px solid black;
+	}
+</style>
+
+<h1>PaperJs - Example 3</h1>
+<h2>Points on a Circle</h2>
+
+<canvas id="canvas" width="1100" height="800"></canvas>
+
+<script type="text/javascript">
+	// We know how to get points from clicks, so let's say we already have some. they will represent the performers
+	var performerPoints = [
+		{x:50, y: 50}, {x:100, y: 50}, {x:150, y: 50}, {x:200, y: 50}, {x:250, y: 50}, {x:300, y: 50}, {x:350, y: 50},
+		{x:400, y: 50}, {x:450, y: 50}, {x:500, y: 50}, {x:550, y: 50}, {x:600, y: 50}, {x:650, y: 50}, {x:700, y: 50},
+		{x:750, y: 50}, {x:800, y: 50}, {x:850, y: 50}, {x:900, y: 50}, {x:950, y: 50}, {x:1000, y: 50}, {x:1050, y: 50}
+	]; // Let's start w/ some performers.
+	// track the actual performer Paper objects
+	var performers = []; 
+
+	paper.install(window);
+	window.onload = function() {
+		paper.setup('canvas');
+
+		// I want a reference circle. This is the shape the performers need to get to.
+		var refCircle = new paper.Path.Circle(new paper.Point(view.size.width/2, view.size.height/2), 150);
+		refCircle.strokeColor = 'red';
+		refCircle.dashArray = [10, 10]; // Set the dash stroke to [10pt dash, 10pt gap]
+		
+		// quickly create the 'performers'
+		for (var i = 0; i < performerPoints.length; i++) {
+			var p = new paper.Path.Circle(new paper.Point(performerPoints[i].x, performerPoints[i].y), 3);
+			p.strokeColor = 'black';
+			performers.push(p);
+		}
+
+		// Find points on the refCircle. One for each performer
+		var ptsOnCircle = getPoints(performers.length, {center: {x: view.size.width/2, y:view.size.height/2}, radius: 150});
+		console.log(ptsOnCircle);
+
+		var delayFrameCount = 0; // this counts the number of frames that has passed after arrival
+		var directionIn = true;
+		// animate each performer to go to a spot in the reference circle.
+		// keep it simple for now. perf 1 goes to point 1 on the circle. This won't make sense logistically,
+		// 		because perfs may criss-cross. Ideally there would be a locateLogicalPoint() method.
+		view.onFrame = function(event) {
+
+			// On each frame, move each point
+			if (directionIn) {
+				for (var i = 0; i < performers.length; i++) {
+					// let's get a Point object first so we can do Vector math
+					// yes this happens every time, but it's the same reference point being created. This would
+					//		be better done outside or in the getPoints function or anywhere else.
+					var destination = new paper.Point(ptsOnCircle[i].x, ptsOnCircle[i].y);
+					// I want movements to be even. I want each step a performer makes to be equal to their previous step.
+					// So get a Vector for the difference between their starting position (performerPoints) and their destination
+					var startingPoint = new paper.Point(performerPoints[i].x, performerPoints[i].y);
+
+					// The vector is the difference between the position of the performer and the destination point:
+					var vector = destination.subtract( startingPoint );
+
+					// if we are not at the point, keep moving towards it
+					// because the points on the refCircle could be high percision, let's just round to fet the general idea of when to stop.
+					if (!performers[i].position.round().equals(destination.round())) {
+						// Add 1/100th of the vector to the performer's position.
+						performers[i].position = performers[i].position.add(vector.divide(100));
+					} 
+				}
+				// they should theoretically all arive together, so let's check if the first one arrived.
+				var checkDestination = new paper.Point(ptsOnCircle[0].x, ptsOnCircle[0].y);
+				if (performers[0].position.round().equals(checkDestination.round())) {
+					delayFrameCount += 1;
+					// after waiting N frames, change direction and reset the delay
+					if (delayFrameCount >= 60) {
+						delayFrameCount= 0;
+						directionIn = false; // we are no longer moving IN. We are moving OUT
+					}
+				} 
+			} else {
+				// in this case, we are moving from the circle to the original line
+				for (var i = 0; i < performers.length; i++) {
+					// let's get a Point object first so we can do Vector math
+					// I want movements to be even. I want each step a performer makes to be equal to their previous step.
+					// So get a Vector for the difference between their starting position and their destination
+					// the destination and startingPoint are swapped in this direction.
+					var destination = new paper.Point(performerPoints[i].x, performerPoints[i].y);
+					var startingPoint = new paper.Point(ptsOnCircle[i].x, ptsOnCircle[i].y);
+					var vector = destination.subtract( startingPoint );
+
+					// if we are not at the point, keep moving towards it
+					// because the points on the refCircle could be high percision, let's just round to fet the general idea of when to stop.
+					if (!performers[i].position.round().equals(destination.round())) {
+						// Add 1/100th of the vector to the performer's position.
+						performers[i].position = performers[i].position.add(vector.divide(100));
+					}
+				}
+
+				// they should theoretically all arive together, so let's check if the first one arrived.
+				var checkDestination = new paper.Point(performerPoints[0].x, performerPoints[0].y);
+				if (performers[0].position.round().equals(checkDestination.round())) {
+					delayFrameCount += 1;
+					// after waiting N frames, change direction and reset the delay
+					if (delayFrameCount >= 60) {
+						delayFrameCount= 0;
+						directionIn = true; // we are no longer moving OUT. We are moving IN
+					}
+				} 
+				
+			}
+		}
+	}
+</script>
