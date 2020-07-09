@@ -1,0 +1,80 @@
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-full.js"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+	canvas {
+		border: 1px solid black;
+	}
+</style>
+
+<h1>PaperJs</h1>
+
+<p>
+	This example uses regular JS. Remember to setup the canvas to use Paper.
+
+</p>
+<canvas id="canvas" width="500" height="300"></canvas>
+
+<script type="text/javascript">
+	var shapes = [];
+	$(document).ready(function() {
+		var canvas = document.getElementById('canvas');
+		
+		// set up the canvas in the PaperScope --> this creates a project & view for the canvas
+		paper.setup(canvas);
+	
+		// This is the same as it has been...
+		var p1 = null, p2 = null;
+		// allow for clicks on the canvas
+		$(canvas).on("click", function(event) {
+			if (p1 === null) {
+				p1 = {x: event.offsetX, y: event.offsetY}
+			} else if (p2 === null) {
+				p2 = {x: event.offsetX, y: event.offsetY}
+			}
+
+			// if both points exist, draw the circle.
+			if (p1 != null && p2 != null) {
+				// get the distance between the pts for the radius.
+				var a = p1.x - p2.x;
+				var b = p1.y - p2.y;
+				var radius = Math.sqrt( a*a + b*b );
+
+				// create a circle at pt 1 w/ calculated radius
+				var circle = new paper.Path.Circle(new paper.Point(p1.x, p1.y), radius);
+				circle.strokeColor = 'black'; // set the color of the stroke
+				// draw the view
+				paper.view.draw();
+
+				shapes.push(circle);
+
+				// now reset the points for the next drawing
+				p1 = null;
+				p2 = null;
+			}
+		});
+	});
+</script>
