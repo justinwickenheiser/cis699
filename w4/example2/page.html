@@ -1,0 +1,72 @@
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-full.js"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+	canvas {
+		border: 1px solid black;
+	}
+</style>
+
+<h1>PaperJs - Example 2</h1>
+<h2>Simple Annimation</h2>
+
+<canvas id="canvas" width="1100" height="800"></canvas>
+
+<script type="text/javascript">
+	// We know how to get points from clicks, so let's say we already have some. they will represent the performers
+	var performerPoints = [
+		{x:50, y: 50}, {x:100, y: 50}, {x:150, y: 50}, {x:200, y: 50}, {x:250, y: 50}, {x:300, y: 50}, {x:350, y: 50},
+		{x:400, y: 50}, {x:450, y: 50}, {x:500, y: 50}, {x:550, y: 50}, {x:600, y: 50}, {x:650, y: 50}, {x:700, y: 50},
+		{x:750, y: 50}, {x:800, y: 50}, {x:850, y: 50}, {x:900, y: 50}, {x:950, y: 50}, {x:1000, y: 50}, {x:1050, y: 50}
+	]; // Let's start w/ some performers.
+	// track the actual performer Paper objects
+	var performers = [];
+
+	paper.install(window);
+	window.onload = function() {
+		paper.setup('canvas');
+		// quickly create the 'performers'
+		for (var i = 0; i < performerPoints.length; i++) {
+			var circ = new paper.Path.Circle(new paper.Point(performerPoints[i].x, performerPoints[i].y), 3);
+			circ.strokeColor = 'black';
+			performers.push(circ);
+		}
+
+		var waveHeight = 300; // This is measured from the center to the top, NOT bottom valley to hill top.
+		var maxHeightOffset = waveHeight + 50; // This is the offset from the top of the canvas to where we want the tallest point of the wave to hit: 50 is the initial height of the points
+		// animate them -- trivially.
+		view.onFrame = function(event) {
+			// On each frame, move each point in the sin wave.
+
+			for (var i = 0; i < performers.length; i++) {
+				// A cylic value between -1 and 1
+				var sinus = Math.sin(event.time * 1 + i);
+
+				performers[i].position.y = sinus * waveHeight + maxHeightOffset; 
+			}
+		}
+	}
+</script>
