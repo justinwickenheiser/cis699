@@ -1,0 +1,152 @@
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-full.js"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script type="text/javascript">
+	function getPoints(num, circle) {
+		// This will calculate the degrees between each point for num number of points on the circle.
+		var degreesDelta = 360 / num;
+		var nextPointDegree = 0;
+		var rtnVal = []; // Return an array of points
+
+		for (var i = 0; i < num; i++) {
+			var pt = findPointOnCircle(circle.center.x, circle.center.y, circle.radius, nextPointDegree);
+			pt.fillColor = 'red';
+			pt.fillColor.hue += (8*i);
+			rtnVal.push( pt );
+			
+			// move to the next point offset
+			nextPointDegree += degreesDelta;
+		}
+
+		return rtnVal;
+	}
+
+	// Given the origin point of the circle, its radius and the angle in Radians (degrees * Math.PI / 180)
+	// it returns the a point object showing the x,y coordinates of the point on a circle.
+	// Reference: https://www.coderslexicon.com/code/59/
+	function findPointOnCircle(originX, originY , radius, degrees) {
+		var angleRadians = (degrees * Math.PI / 180);
+		var newX = radius * Math.cos(angleRadians) + originX
+		var newY = radius * Math.sin(angleRadians) + originY
+
+		return new paper.Path.Circle(new paper.Point(newX, newY), 3);
+	}
+
+	function toggleShape(shape, show, filled, color) {
+		if (show) {
+			shape.visible = true;
+			shape.strokeColor = color;
+			if (filled) {
+				shape.fillColor = color;
+			} else {
+				shape.fillColor = null;
+			}
+		} else {
+			shape.visible = false;
+		}
+	}
+
+	function toggleReferenceCircle() {
+		showingRefCircle = !showingRefCircle;
+		toggleShape(refCircle, showingRefCircle, false, 'red');
+		toggleShape(innerCircle, showingRefCircle, false, 'red');
+	}
+</script>
+
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+	canvas {
+		border: 1px solid black;
+	}
+</style>
+
+<h1>PaperJs - Example 7</h1>
+<h2>Condensing</h2>
+
+<div class="container">
+	<button onClick="toggleReferenceCircle();">Toggle Reference Circle</button>
+</div>
+<canvas id="canvas" width="1100" height="800"></canvas>
+
+<script type="text/javascript">
+	var totalPerformers = 40;
+	var spacing = 360/totalPerformers; // the spacing between perfs in Degrees
+	// track the actual performer Paper objects
+	var performers = [];
+	var refCircle, innerCircle;
+	var showingRefCircle = true;
+
+
+	paper.install(window);
+	window.onload = function() {
+		paper.setup('canvas');
+
+		// I want a reference circle. This is the shape the performers need to get to.
+		refCircle = new paper.Path.Circle(new paper.Point(view.size.width/2, view.size.height/2), 150);
+		refCircle.strokeColor = 'red';
+		refCircle.dashArray = [10, 10]; // Set the dash stroke to [10pt dash, 10pt gap]
+
+		innerCircle = new paper.Path.Circle(new paper.Point(view.size.width/2, view.size.height/2), 50);
+		innerCircle.strokeColor = 'red';
+		innerCircle.dashArray = [10, 10];
+
+
+		// quickly create the 'performers'
+		performers = getPoints(totalPerformers, {center: {x: view.size.width/2, y:view.size.height/2}, radius: 150});
+		console.log(performers);
+
+		var newRadius = 150
+		var directionIn = true;
+		// animate each performer
+		view.onFrame = function(event) {
+			if (directionIn) {
+				newRadius -= 1;
+				// once we reach a radius of 75, switch to moving out
+				if (newRadius == 50) {
+					directionIn = false;
+				}
+			} else {
+				newRadius += 1;
+				// once we reach a radius of 75, switch to moving out
+				if (newRadius == 150) {
+					directionIn = true;
+				}
+			}
+			
+			// On each frame, move each point
+			for (var i = 0; i < performers.length; i++) {
+				var perf = performers[i];
+
+				// The vector is the difference between the position of the performer and the destination point:
+				var vector = perf.position.subtract( refCircle.position );
+				var pt = findPointOnCircle(refCircle.position.x, refCircle.position.y, newRadius, vector.angle);
+				performers[i].position = pt.position;
+				pt.remove();
+				
+				// rotate 1 degree centered around the refCircle Position
+				perf.rotate(1, refCircle.position);
+			}
+		}
+	}
+</script>
