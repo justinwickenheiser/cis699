@@ -1,0 +1,211 @@
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-full.js"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script type="text/javascript">
+	function getPoints(num, circle) {
+		// This will calculate the degrees between each point for num number of points on the circle.
+		var degreesDelta = 360 / num;
+		var nextPointDegree = 0;
+		var rtnVal = []; // Return an array of points
+
+		for (var i = 0; i < num; i++) {
+			rtnVal.push( findPointOnCircle(circle.center.x, circle.center.y, circle.radius, nextPointDegree) );
+			
+			// move to the next point offset
+			nextPointDegree += degreesDelta;
+		}
+
+		return rtnVal;
+	}
+
+	// Given the origin point of the circle, its radius and the angle in Radians (degrees * Math.PI / 180)
+	// it returns the a point object showing the x,y coordinates of the point on a circle.
+	// Reference: https://www.coderslexicon.com/code/59/
+	function findPointOnCircle(originX, originY , radius, degrees) {
+		var angleRadians = (degrees * Math.PI / 180);
+		var newX = radius * Math.cos(angleRadians) + originX
+		var newY = radius * Math.sin(angleRadians) + originY
+
+		return new paper.Point(newX, newY);
+	}
+
+	// Given a set performer's position, find the vector distance to each point on a provided RefCircle
+	function getDistToRefForPerformer(performer, refCirclePts) {
+		// refCirclePts needs to be an array of PaperJS Point objects
+		// The performer needs to be a Path object of some sort. So it will have a position.
+		var position = performer.position;
+		var rtnVal = []; // Return an array of vectors.
+		for (var i = 0; i < refCirclePts.length; i++) {
+			var destination = refCirclePts[i];
+			rtnVal.push( destination.subtract( position ).length );
+		}
+		return rtnVal;
+	}
+</script>
+
+<style type="text/css">
+	body {
+		line-height: 1.5;
+	}
+	code {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.codeblock {
+		background-color: rgb(39,40,34);
+		color: orange;
+		padding: 2px;
+		border-radius: 4px;
+		border: 1px solid rgb(108,109,105);
+		font-size: 11px;
+	}
+	.container {
+		margin-bottom: 1em;
+	}
+	canvas {
+		border: 1px solid black;
+	}
+</style>
+
+<h1>PaperJs - Example 4</h1>
+<h2>Shortest(ish) Path</h2>
+
+
+<canvas id="canvas" width="1100" height="800"></canvas>
+
+<script type="text/javascript">
+	// We know how to get points from clicks, so let's say we already have some. they will represent the performers
+	var performerPoints = [
+		{x:50, y: 50}, {x:100, y: 50}, {x:150, y: 50}, {x:200, y: 50}, {x:250, y: 50}, {x:300, y: 50}, {x:350, y: 50},
+		{x:400, y: 50}, {x:450, y: 50}, {x:500, y: 50}, {x:550, y: 50}, {x:600, y: 50}, {x:650, y: 50}, {x:700, y: 50},
+		{x:750, y: 50}, {x:800, y: 50}, {x:850, y: 50}, {x:900, y: 50}, {x:950, y: 50}, {x:1000, y: 50}, {x:1050, y: 50}
+	]; // Let's start w/ some performers.
+	// track the actual performer Paper objects
+	var performers = []; 
+
+	paper.install(window);
+	window.onload = function() {
+		paper.setup('canvas');
+
+		// I want a reference circle. This is the shape the performers need to get to.
+		var refCircle = new paper.Path.Circle(new paper.Point(view.size.width/2, view.size.height/2), 150);
+		refCircle.strokeColor = 'red';
+		refCircle.dashArray = [10, 10]; // Set the dash stroke to [10pt dash, 10pt gap]
+
+		// Find points on the refCircle. One for each performer
+		// This version: getPoints returns an array of PaperJS Point objects
+		var ptsOnCircle = getPoints(performerPoints.length, {center: {x: view.size.width/2, y:view.size.height/2}, radius: 150});
+		console.log(ptsOnCircle);
+		
+		// quickly create the 'performers'
+		for (var i = 0; i < performerPoints.length; i++) {
+			var startingPoint = new paper.Point(performerPoints[i].x, performerPoints[i].y);
+			var p = new paper.Path.Circle(startingPoint, 3);
+			p.strokeColor = 'black';
+
+			performers.push({
+				perf: p,
+				distToRefPts: getDistToRefForPerformer( p, ptsOnCircle ),
+				startingPoint: startingPoint,
+				destination: null,
+			});
+		}
+
+		// For each pt on the refCircle, look at each performers distance to that refCircle point. Assign the performer w/ the shortest distance to that refCircle point to use that refCircle point as it's final destination.
+		// loop through the performer Points
+		for (var i = 0; i < ptsOnCircle.length; i++) {
+			var currentRefPoint = ptsOnCircle[i];
+			var shortestDistPerf = null;
+			var shortestDistPerfIdx;
+
+			// loop through each performer
+			for (var j = 0; j < performers.length; j++) {
+				// if the performer has not been assigned a destination on the refCircle, they are fair game
+				if (performers[j].destination == null) {
+					// preselect the first available shortestDistPerf
+					if (shortestDistPerf == null) {
+						shortestDistPerf = performers[j];
+						shortestDistPerfIdx = j;
+					} else {
+						// Compare the currently chosen shortestDistPerf to the current available performer
+						// if the current shortestDistPerf is greater, choose the smaller, don't do anything for the ELSE because we don't need to change the current shortestDistPerf.
+						if (performers[j].distToRefPts[i] < shortestDistPerf.distToRefPts[i]) {
+							shortestDistPerf = performers[j];
+							shortestDistPerfIdx = j;
+						}
+					}
+				}
+			}
+
+			// Now that we have found the perf w/ the shortest distance to currentRefPoint (out of current available), assign the refPoint as the destination.
+			performers[shortestDistPerfIdx].destination = currentRefPoint;
+		}
+		console.log(performers);
+
+
+
+		var delayFrameCount = 0; // this counts the number of frames that has passed after arrival\
+		var directionIn = true;
+		// animate each performer to go to a spot in the reference circle.
+		// keep it simple for now. perf 1 goes to point 1 on the circle. This won't make sense logistically,
+		// 		because perfs may criss-cross. Ideally there would be a locateLogicalPoint() method.
+		view.onFrame = function(event) {
+
+			// On each frame, move each point
+			if (directionIn) {
+				for (var i = 0; i < performers.length; i++) {
+					var destination = performers[i].destination;
+					
+					// The vector is the difference between the position of the performer and the destination point:
+					var vector = destination.subtract( performers[i].startingPoint );
+
+					// if we are not at the point, keep moving towards it
+					// because the points on the refCircle could be high percision, let's just round to fet the general idea of when to stop.
+					if (!performers[i].perf.position.round().equals(destination.round())) {
+						// Add 1/100th of the vector to the performer's position.
+						performers[i].perf.position = performers[i].perf.position.add(vector.divide(100));
+					} 
+				}
+				// they should theoretically all arive together, so let's check if the first one arrived.
+				if (performers[0].perf.position.round().equals( performers[0].destination.round() )) {
+					delayFrameCount += 1;
+					// after waiting N frames, change direction and reset the delay
+					if (delayFrameCount >= 60) {
+						delayFrameCount= 0;
+						directionIn = false; // we are no longer moving IN. We are moving OUT
+					}
+				}
+			} else {
+				// in this case, we are moving from the circle to the original line
+				for (var i = 0; i < performers.length; i++) {
+					// the destination and startingPoint are swapped in this direction.
+					var destination = performers[i].startingPoint;
+					var startingPoint = performers[i].destination;
+					var vector = destination.subtract( startingPoint );
+
+					// if we are not at the point, keep moving towards it
+					// because the points on the refCircle could be high percision, let's just round to fet the general idea of when to stop.
+					if (!performers[i].perf.position.round().equals(destination.round())) {
+						// Add 1/100th of the vector to the performer's position.
+						performers[i].perf.position = performers[i].perf.position.add(vector.divide(100));
+					}
+				}
+
+				// they should theoretically all arive together, so let's check if the first one arrived.
+				if (performers[0].perf.position.round().equals(performers[0].startingPoint.round())) {
+					delayFrameCount += 1;
+					// after waiting N frames, change direction and reset the delay
+					if (delayFrameCount >= 60) {
+						delayFrameCount= 0;
+						directionIn = true; // we are no longer moving OUT. We are moving IN
+					}
+				} 
+				
+			}
+		}
+	}
+</script>
