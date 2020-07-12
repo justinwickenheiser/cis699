@@ -3,6 +3,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" type="text/javascript"></script> <!-- jQuery Mousewheel plugin -->
 <script src="../../paperjs-v0.12.11/dist/paper-full.js"></script>
 <script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/PanZoom.js"></script>
 <script type="text/javascript">
 
 	function getPoints(num, circle, color, fill) {
@@ -117,26 +118,13 @@
 
 	$('#canvas').mousewheel(function(event) {
 		if (event.shiftKey) {
-			var offset = new paper.Point( event.deltaX, -event.deltaY);
-			offset = offset.multiply(event.deltaFactor);
-			view.center = view.center.add(offset);
+			view.center = PanZoom.changeCenter(view.center, event.deltaX, event.deltaY,event.deltaFactor, -1000,1000,-1000,1000);
 			event.preventDefault()
 		} else if (event.altKey) {
 			// ZOOM
-			var factor = 1.05;
 			var oldZoom = view.zoom;
-			var newZoom;
-			if (event.deltaY < 0) {
-				// Zoom In: max is 4 (numbers might be higher than 4, if so... choose 4 (min))
-				newZoom = Math.min(4, oldZoom * factor);
-			} else {
-				// Zoom Out: max is 0.25 (numbers might be smaller than 0.25, if so... choose 0.25 (max))
-				newZoom = Math.max(0.25, oldZoom / factor);
-			}
 			var mousePosition = new paper.Point(event.offsetX, event.offsetY);
-			var pc = mousePosition.subtract(view.center);
-			var beta = oldZoom / newZoom;
-			var offset = mousePosition.subtract(pc.multiply(beta)).subtract(view.center);
+			var [newZoom, offset] = PanZoom.changeZoom(oldZoom, event.deltaY, view.center, mousePosition, undefined, 4, 0.25);
 			view.zoom = newZoom;
 			view.center = view.center.add(offset);
 		}
@@ -188,26 +176,6 @@
 
 		// get some reference points on the circle
 		refPoints = getPoints(perfsPerCircle, {center: view.center, radius: refRadius}, 'black');
-
-		// Create a PointText object that you can drag
-		// var pt = drawPoint(20,48, 'X');
-		// pt.onMouseDrag = function(event) {
-		// 	var newPos = pt.position.add(event.delta);
-
-		// 	if ( snapToPt = snapTo(refPoints, newPos, 15) ) {
-		// 		pt.position = snapToPt.position;
-		// 		snapToPt.fillColor = 'blue';
-		// 	}
-		// 	pt.position = newPos;
-		// }
-
-		// pt.onMouseUp = function(event) {
-		// 	if ( snapToPt = snapTo(refPoints, event.point, 15) ) {
-		// 		pt.position = snapToPt.position;
-		// 	} else {
-		// 		pt.position = event.point;
-		// 	}
-		// }
 
 	}
 </script>
