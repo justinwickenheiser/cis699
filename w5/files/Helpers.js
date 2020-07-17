@@ -1,4 +1,28 @@
 class Helpers {
+	static MOVE = {
+		FM: 0,
+		BM: 1,
+		LT: 2,
+		RT: 3,
+		FTL: 4,
+		MT: 10,
+	};
+	static OBLIQUE = {
+		FL: 11,
+		FR: 12,
+		BL: 13,
+		BR: 14
+	}
+	static STEP = {
+		STND: 5,
+		HALF: 6,
+		ADJ: 7,
+	};
+	static HASH = {
+		COLLEGE: 8,
+		HS: 9,
+	};
+
 	// pps: Pixels per Step
 	static drawField(pps, obj) {
 		if (obj === undefined) {
@@ -8,7 +32,7 @@ class Helpers {
 			obj.layerName = "field"
 		}
 		if (obj.hash === undefined) {
-			obj.hash = "COLLEGE"
+			obj.hash = Helpers.HASH.COLLEGE;
 		}
 
 		var rtnLayer = new paper.Layer({
@@ -16,7 +40,7 @@ class Helpers {
 		});
 		// College & Default
 		var hashDist = {back: 8, front: 13};
-		if (obj.hash == "HS") {
+		if (obj.hash == Helpers.HASH.HS) {
 			hashDist.back = 7;
 			hashDist.front = 14;
 		}
@@ -189,6 +213,60 @@ class Helpers {
 			fieldNumbers.addChild( numberText );
 		}
 
+
+		// ======================================================
+		// Reference Points
+		//		These will be a group in the field layer that houses important points 
+		//		that can be used for easier offset vector arithmatic.
+		//
+		//		For every yardline (including goal lines), get the point that interesects
+		//		the Back Side Line, Back Hash, Front Hash, Front Side Line
+		//
+		//		Don't need to do the center, because Each yard line (Path.Line) has a .position which is the center
+		// ======================================================
+		var fieldReferences = new paper.Group({
+			name: 'fieldReferences',
+			parent: rtnLayer
+		});
+		for (var i = 0; i < 21; i++) {
+			// Reference On Back Side Line
+			fieldReferences.addChild( new paper.Path.Circle({
+				center: fieldOffset.add( new paper.Point(8*pps*i, 0) ),
+				radius: 3,
+				strokeColor: 'purple',
+				name: ( i < 10 ? 'back_sl_'+(5*i)+'_left' : ( i == 10 ?  'back_sl_50_center' : ( i%10 > 0 ? 'back_sl_' + ((5*i) - (10*(i%10))) + '_right' : 'back_sl_0_right' ) ) ),
+				visible: false,
+			}) );
+
+			// Reference On Back Hash
+			fieldReferences.addChild( new paper.Path.Circle({
+				center: fieldOffset.add( new paper.Point(8*pps*i, hashDist.back*4*pps) ),
+				radius: 3,
+				strokeColor: 'purple',
+				name: ( i < 10 ? 'back_hash_'+(5*i)+'_left' : ( i == 10 ?  'back_hash_50_center' : ( i%10 > 0 ? 'back_hash_' + ((5*i) - (10*(i%10))) + '_right' : 'back_hash_0_right' ) ) ),
+				visible: false,
+			}) );
+
+			// Reference On Front Hash
+			fieldReferences.addChild( new paper.Path.Circle({
+				center: fieldOffset.add( new paper.Point(8*pps*i, hashDist.front*4*pps) ),
+				radius: 3,
+				strokeColor: 'purple',
+				name: ( i < 10 ? 'front_hash_'+(5*i)+'_left' : ( i == 10 ?  'front_hash_50_center' : ( i%10 > 0 ? 'front_hash_' + ((5*i) - (10*(i%10))) + '_right' : 'front_hash_0_right' ) ) ),
+				visible: false,
+			}) );
+
+			// Reference On Front Side Line
+			fieldReferences.addChild( new paper.Path.Circle({
+				center: fieldOffset.add( new paper.Point(8*pps*i, 84*pps) ),
+				radius: 3,
+				strokeColor: 'purple',
+				name: ( i < 10 ? 'front_sl_'+(5*i)+'_left' : ( i == 10 ?  'front_sl_50_center' : ( i%10 > 0 ? 'front_sl_' + ((5*i) - (10*(i%10))) + '_right' : 'front_sl_0_right' ) ) ),
+				visible: false,
+			}) );
+
+		}
+
 		return rtnLayer;
 	}
 
@@ -257,13 +335,116 @@ class Helpers {
 
 				// Let's also populate w/ some points because why not.
 				var numPoints = Math.ceil(Math.floor(path.length/10)/2);
-				console.log(Math.floor(path.length/10))
 				for (var i = 0; i <= numPoints; i++) {
 					var offset = path.length / numPoints;
 					var point = path.getPointAt(offset * i);
 					Helpers.drawPoint(point.x, point.y, 'X');
 				}
 			}
+		}
+
+		return rtnVal;
+	}
+
+	static getNextPosition(point, direction, offset, stepSize, pps) {
+		if (direction == undefined) {
+			direction = Helpers.MOVE.MT;
+		}
+		if (offset == undefined) {
+			offset = 1;
+		}
+		if (stepSize == undefined) {
+			stepSize = Helpers.STEP.STND;
+		}
+		if (pps == undefined) {
+			pps = 5;
+		}
+
+		var rtnVal;
+		if (direction == Helpers.MOVE.FM) {
+			if (stepSize === Helpers.STEP.STND) {
+				rtnVal = [point.x, point.y + (offset * pps)];
+			} else if (stepSize === Helpers.STEP.HALF) {
+				// 16-5 is half a regular step.
+				rtnVal = [point.x, point.y + ((offset * pps)/2)];
+			}
+		} else if (direction === Helpers.MOVE.BM) {
+			if (stepSize === Helpers.STEP.STND) {
+				rtnVal = [point.x, point.y - (offset * pps)];
+			} else if (stepSize === Helpers.STEP.HALF) {
+				// 16-5 is half a regular step.
+				rtnVal = [point.x, point.y - ((offset * pps)/2)];
+			}
+		} else if (direction === Helpers.MOVE.LT) {
+			if (stepSize === Helpers.STEP.STND) {
+				rtnVal = [point.x + (offset * pps), point.y];
+			} else if (stepSize === Helpers.STEP.HALF) {
+				// 16-5 is half a regular step.
+				rtnVal = [point.x + ((offset * pps)/2), point.y ];
+			}
+		} else if (direction === Helpers.MOVE.RT) {
+			if (stepSize === Helpers.STEP.STND) {
+				rtnVal = [point.x - (offset * pps), point.y];
+			} else if (stepSize === Helpers.STEP.HALF) {
+				// 16-5 is half a regular step.
+				rtnVal = [point.x - ((offset * pps)/2), point.y ];
+			}
+		} else if (direction === Helpers.MOVE.MT) {
+			rtnVal = [point.x, point.y];
+		} else if (direction === Helpers.OBLIQUE.FL) {
+			// FL = Towards South East corner (+x, +y)
+			rtnVal = [point.x + (offset * pps), point.y + (offset * pps)];
+		} else if (direction === Helpers.OBLIQUE.FR) {
+			// FR = Towards South West corner (-x, +y)
+			rtnVal = [point.x - (offset * pps), point.y + (offset * pps)];
+		} else if (direction === Helpers.OBLIQUE.BL) {
+			// BL = Towards North East corner (+x, -y)
+			rtnVal = [point.x + (offset * pps), point.y - (offset * pps)];
+		} else if (direction === Helpers.OBLIQUE.BR) {
+			// BR = Towards North West corner (-x, -y)
+			rtnVal = [point.x - (offset * pps), point.y - (offset * pps)];
+		}
+
+		return rtnVal;
+
+	}
+
+	static applyMoveSet(point, moveSet) {
+		/* moveSet = {
+		 *		move: Helpers.MOVE.<value>,
+		 *		counts: <number>,
+		 *		stepSize: <number>, [optional]
+		 *		pps: <number>, [optional]
+		 * }
+		 */
+		// return an array of points
+		var rtnVal = [];
+
+		for (var count = 1; count <= moveSet.counts; count++) {
+			rtnVal.push(Helpers.getNextPosition(point, moveSet.move, count));
+		}
+
+		return rtnVal;
+	}
+
+	static applyMoveSetArray(point, moveSet) {
+		/* moveSet = {
+		 *		move: Helpers.MOVE.<value>,
+		 *		counts: <number>,
+		 *		stepSize: <number>, [optional]
+		 *		pps: <number>, [optional]
+		 * }
+		 */
+		// return an array of points
+		var rtnVal = [];
+		var newPoint = point;
+
+		for (var set = 0; set < moveSet.length; set++) {
+			// for each set, apply it to the point
+			rtnVal = rtnVal.concat( Helpers.applyMoveSet(newPoint, moveSet[set]) );
+			// we need to set the starting point to be the last position in the rtnVal.
+			// it also needs to be a Point object
+			newPoint = new paper.Point(rtnVal[rtnVal.length-1]);
 		}
 
 		return rtnVal;

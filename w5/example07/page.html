@@ -1,0 +1,172 @@
+<link rel="stylesheet" type="text/css" href="../files/basic.css" />
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/Helpers.js"></script>
+
+<h1>PaperJs - Week 5 - Example 7</h1>
+<h2>Applying an array of move sets in one go! Working w/ Obliques</h2>
+
+
+
+<div class="container">
+	
+</div>
+<canvas id="canvas" width="980" height="550"></canvas>
+
+<script type="text/javascript">
+	paper.install(window);
+
+	
+	var positionSet = [];
+	var performer;
+
+	
+	window.onload = function() {
+		paper.setup('canvas');
+
+		Helpers.drawField(5);
+
+		// get a new layer for testing. it should auto set to activeLayer
+		var testLayer = new paper.Layer({
+			name: 'test'
+		});
+
+		initPos = project.getItem({name: 'back_sl_40_left'}).position;
+		performer = Helpers.drawPoint(initPos.x, initPos.y, 'X');
+		// positionSet.push(initPos);
+
+		var moveSetArray = [
+			{
+				move: Helpers.MOVE.FM,
+				counts: 32
+			},
+			{
+				move: Helpers.MOVE.MT,
+				counts: 8
+			},
+			{
+				move: Helpers.MOVE.RT,
+				counts: 16
+			},
+			{
+				move: Helpers.MOVE.FM,
+				counts: 16
+			},
+			{
+				move: Helpers.MOVE.LT,
+				counts: 4
+			},
+			{
+				move: Helpers.MOVE.FM,
+				counts: 36
+			},
+		]
+
+		console.log(moveSetArray);
+		positionSet = Helpers.applyMoveSetArray(initPos, moveSetArray);
+		console.log(positionSet);
+
+		// =============
+		// OBLIQUES
+		// =============
+
+		var oblInitPos = project.getItem({name: 'back_sl_0_right'}).position;
+		var oblPerf = Helpers.drawPoint(oblInitPos.x, oblInitPos.y, 'X');
+		var oblPositionSet = Helpers.applyMoveSetArray(oblInitPos, [
+			{
+				move: Helpers.OBLIQUE.FR,
+				counts: 32
+			},
+			{
+				move: Helpers.OBLIQUE.MT,
+				counts: 4
+			},
+			{
+				move: Helpers.OBLIQUE.BR,
+				counts: 16
+			},
+			{
+				move: Helpers.OBLIQUE.MT,
+				counts: 4
+			},
+			{
+				move: Helpers.OBLIQUE.FR,
+				counts: 32
+			},
+			{
+				move: Helpers.OBLIQUE.MT,
+				counts: 4
+			},
+			{
+				move: Helpers.OBLIQUE.FL,
+				counts: 8
+			},
+			{
+				move: Helpers.OBLIQUE.MT,
+				counts: 4
+			},
+			{
+				move: Helpers.OBLIQUE.BL,
+				counts: 8
+			},
+		]);
+
+
+		// =============
+		// ANIMATION
+		// =============
+
+		var framesPerCount = 12;
+		var countMaxCount = positionSet.length-1;;
+		var countIteration = 0;
+
+		performer.onFrame = function(event) {
+			var currentStartingPoint = new paper.Point( positionSet[countIteration] );
+			
+			if (countIteration < countMaxCount) {
+				var destination = new paper.Point( positionSet[countIteration+1] );
+				var vector = destination.subtract( currentStartingPoint );
+				// Let's slow this down
+
+				if (event.count > 0 && event.count % framesPerCount == 0) {
+					// after we move x framesPerCount, indicate that we have progressed to the next count.
+					// this will make sure we grab the correct "currentStartingPoint" and "destination" Points
+					countIteration++;
+					performer.position = destination;
+
+				} else {
+					performer.position = performer.position.add(vector.divide(framesPerCount));
+				}
+			} else {
+				countIteration = 0; // this resets the animation to the starting COUNT
+				performer.position = initPos;
+			}
+			
+		}
+
+		oblPerf.onFrame = function(event) {
+			var currentStartingPoint = new paper.Point( oblPositionSet[countIteration] );
+			
+			if (countIteration < countMaxCount) {
+				var destination = new paper.Point( oblPositionSet[countIteration+1] );
+				var vector = destination.subtract( currentStartingPoint );
+				// Let's slow this down
+
+				if (event.count > 0 && event.count % framesPerCount == 0) {
+					// after we move x framesPerCount, indicate that we have progressed to the next count.
+					// this will make sure we grab the correct "currentStartingPoint" and "destination" Points
+					// countIteration++;
+					oblPerf.position = destination;
+
+				} else {
+					oblPerf.position = oblPerf.position.add(vector.divide(framesPerCount));
+				}
+			} else {
+				// countIteration = 0; // this resets the animation to the starting COUNT
+				oblPerf.position = oblInitPos;
+			}
+			
+		}
+
+	}
+</script>
