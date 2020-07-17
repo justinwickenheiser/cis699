@@ -213,4 +213,60 @@ class Helpers {
 
 	}
 
+	static getFnSet(desiredFeature, obj) {
+		if (obj === undefined) {
+			obj = {};
+		}
+		if (obj.layerToUse === undefined) {
+			// check to see if the drawing layer exist
+			var layer = project.getItem({className: 'Layer', name: 'drawings'});
+			if (!layer) {
+				layer = new paper.Layer({name: 'drawings'});
+			}
+		}
+		var rtnVal = {
+			onMouseDown: null,
+			onMouseDrag: null,
+			onMouseUp: null
+		}
+		// Any path drawing will use this. It will automatically go to the activeLayer.
+		var path;
+
+		if (desiredFeature === "drawPath") {
+			rtnVal.onMouseDown = function(event) {
+				// If we produced a path before, deselect it:
+				if (path) {
+					path.selected = false;
+				}
+
+				// Create a new path and set its stroke color to black:
+				path = new paper.Path({
+					segments: [event.point],
+					strokeColor: 'black',
+					parent: layer
+				});
+			}
+
+			rtnVal.onMouseDrag = function(event) {
+				path.add(event.point);
+			}
+
+			rtnVal.onMouseUp = function(event) {
+				// When the mouse is released, simplify it:
+				path.simplify(10);
+
+				// Let's also populate w/ some points because why not.
+				var numPoints = Math.ceil(Math.floor(path.length/10)/2);
+				console.log(Math.floor(path.length/10))
+				for (var i = 0; i <= numPoints; i++) {
+					var offset = path.length / numPoints;
+					var point = path.getPointAt(offset * i);
+					Helpers.drawPoint(point.x, point.y, 'X');
+				}
+			}
+		}
+
+		return rtnVal;
+	}
+
 }

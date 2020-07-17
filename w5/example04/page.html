@@ -1,0 +1,45 @@
+<link rel="stylesheet" type="text/css" href="../files/basic.css" />
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/Helpers.js"></script>
+
+<h1>PaperJs - Week 5 - Example 4</h1>
+<h2>Drawn Paths</h2>
+<p>
+	This example sets up a field layer & a test layer. It calls for a specific Function Set from the Helpers class and passes the test layer to be used for drawing <code>var fnSet = Helpers.getFnSet("drawPath", {layerToUse: testLayer});</code>.
+</p>
+<p>
+	<strong>To Draw Paths:</strong>
+	<ol>
+		<li>Click (onMouseDown): start new path</li>
+		<li>Drag (onMouseDrag): adds points</li>
+		<li>Release (onMouseUp): smooths/simplifies the path and draws a calculated number of performers</li>
+	</ol>
+	[Reference]<br />
+	This is a <a href="http://paperjs.org/examples/path-simplification/">solved example</a> from PaperJs.
+</p>
+
+<div class="container">
+	
+</div>
+<canvas id="canvas" width="980" height="550"></canvas>
+
+<script type="text/javascript">
+	paper.install(window);
+	window.onload = function() {
+		paper.setup('canvas');
+
+		Helpers.drawField(5);
+
+		// get a new layer for testing. it should auto set to activeLayer
+		var testLayer = new paper.Layer({
+			name: 'test'
+		});
+
+		var fnSet = Helpers.getFnSet("drawPath", {layerToUse: testLayer});
+		console.log(fnSet);
+		view.onMouseDown = fnSet.onMouseDown;
+		view.onMouseDrag = fnSet.onMouseDrag;
+		view.onMouseUp = fnSet.onMouseUp;
+	}
+</script>
