@@ -25,6 +25,7 @@ class Helpers {
 
 	// pps: Pixels per Step
 	static drawField(pps, obj) {
+
 		if (obj === undefined) {
 			obj = {}
 		}
@@ -291,6 +292,39 @@ class Helpers {
 
 	}
 
+	static initPanZoom(canvasId) {
+		var canvasHeight = $('#'+canvasId)[0].height;
+		var canvasWidth = $('#'+canvasId)[0].width;
+
+		$('#'+canvasId).mousewheel(function(event) {
+			if (event.shiftKey) {
+				view.center = PanZoom.changeCenter(
+					view.center,
+					event.deltaX,
+					event.deltaY,
+					event.deltaFactor,
+					-canvasWidth/15,	// xMin
+					canvasWidth, 	// xMax
+					-canvasHeight/15, 	// yMin
+					canvasHeight	// yMax
+				);
+				event.preventDefault()
+			} else if (event.altKey) {
+				// ZOOM
+				var oldZoom = view.zoom;
+				var mousePosition = new paper.Point(event.offsetX, event.offsetY);
+				var [newZoom, offset] = PanZoom.changeZoom(oldZoom, event.deltaY, view.center, mousePosition, 1.05, 4, 0.25);
+				view.zoom = newZoom;
+				view.center = view.center.add(offset);
+			}
+		});
+	}
+
+	static resetPanZoom() {
+		view.zoom = 1;
+		view.center = [view.size.width/2, view.size.height/2];
+	}
+
 	static getFnSet(desiredFeature, obj) {
 		if (obj === undefined) {
 			obj = {};
@@ -446,6 +480,304 @@ class Helpers {
 			// it also needs to be a Point object
 			newPoint = new paper.Point(rtnVal[rtnVal.length-1]);
 		}
+
+		return rtnVal;
+	}
+
+	static applyPatternSet(point, patternSet) {
+		/* 
+		 *	patternSet = {
+		 *		counts: 16,
+		 *		pattern: [						// 	And array of moveSets
+		 *			{
+		 *				move: Helpers.MOVE.FM,
+		 *				counts: 2
+		 *			},
+		 *			{
+		 *				move: Helpers.MOVE.MT,
+		 *				counts: 2
+		 *			},
+		 *		],
+		 *		reference: <Point Object>, 		// 	This the point that will be checked against to see if we stop 
+		 * 											the patten and move on to the remaining moveSet.
+		 * 											The full Pattern will be completed before checking agains the reference
+		 *		dimension: {					// 	which dimensions should be compare the reference against? (it can be both)
+		 *			x: false,
+		 *			y: true
+		 *		},
+		 *		moveSet: {						// 	This is the move set that is applied for the remaining counts
+	 	 *			move: Helpers.MOVE.FM,
+		 *			counts: 4 // this should be over-written based on how many counts are remaining after running the patternSet through hitting the reference
+		 *		},
+		 *	}
+		 */
+		// return an array of points
+		var rtnVal = [];
+		var newPoint = point;
+		var remainingCounts = patternSet.counts;
+		var patternCounts = 0;
+		var hitReference = false;
+		var buildRef = {x: null, y: null};
+		// now check against the reference
+		buildRef = new Point({
+			x: ( patternSet.dimension.x ? newPoint.x : patternSet.reference.x ),
+			y: ( patternSet.dimension.y ? newPoint.y : patternSet.reference.y )
+		});
+
+		for (var i = 0; i < patternSet.pattern.length; i++) {
+			patternCounts += patternSet.pattern[i].counts;
+		}
+
+		// Do a pre-check to see if we happen to start on the reference point
+		if (buildRef.subtract(patternSet.reference).length == 0) {
+			hitReference = true;
+		} 
+
+		// If we haven't met the reference poinst AND we have enough counts for 1 more round through the pattern
+		// patternCounts > 0 is there to help prevent an infinit loop
+		while (!hitReference && remainingCounts >= patternCounts && patternCounts > 0) {
+			// apply the pattern
+			rtnVal = rtnVal.concat( Helpers.applyMoveSetArray(newPoint, patternSet.pattern) );
+			// reduce the remainingCounts
+			remainingCounts -= patternCounts;
+			// we need to set the starting point to be the last position in the rtnVal.
+			// it also needs to be a Point object
+			newPoint = new paper.Point(rtnVal[rtnVal.length-1]);
+
+			// now check against the reference
+			buildRef.x = ( patternSet.dimension.x ? newPoint.x : patternSet.reference.x );
+			buildRef.y = ( patternSet.dimension.y ? newPoint.y : patternSet.reference.y);
+			// the vector length of the difference betten this built Ref. point and the desired ref point
+			if (buildRef.subtract(patternSet.reference).length == 0) {
+				hitReference = true;
+			}
+		}
+
+		// There is a chance we never met the reference point, but still have remainingCounts if the pattern
+		// has more counts than there are remaining.
+		// IMPORTANT: This method assumes a full run through the pattern before finishing remaining.
+		// I should figure out a nice way to handle this situation, but I will assume Future Me can do Math correctly
+		// when building the patternSet.pattern
+		if (hitReference) {
+			// finish remaining counts using the patternSet.moveSet
+			patternSet.moveSet.counts = remainingCounts;
+			rtnVal = rtnVal.concat( Helpers.applyMoveSet(newPoint, patternSet.moveSet) );
+		} else {
+			// we ran out available counts to run a full Pattern, but we never found the reference point
+		}
+
+
+		return rtnVal;
+	}
+
+	static applyPatternSetV2(point, patternSet) {
+		/* 
+		 *	patternSet = {
+		 *		counts: 16,
+		 *		pattern: [						// 	And array of Patterns (which themselves are arrays of moveSets)
+		 *			[
+		 *				{
+		 *					move: Helpers.MOVE.FM,
+		 *					counts: 2
+		 *				},
+		 *				{
+		 *					move: Helpers.MOVE.MT,
+		 *					counts: 2
+		 *				},
+		 *			],
+		 *		],
+		 *		reference: { 			// The reference is now a struct / point & dimension
+					point: <Point Object>, 		// 	This the point that will be checked against to see if we stop 
+		 * 											the patten and move on to the remaining moveSet.
+		 * 											The full Pattern will be completed before checking agains the reference
+		 *			dimension: {					// 	which dimensions should be compare the reference against? (it can be both)
+		 *				x: false,
+		 *				y: true
+		 *			},
+		 *		},
+		 *		moveSet: {						// 	This is the final move set that is applied for the remaining counts after all patterns are completed.
+	 	 *			move: Helpers.MOVE.FM,
+		 *			counts: 4 // this should be over-written based on how many counts are remaining after running the patternSet through hitting the reference
+		 *		},
+		 *	}
+		 */
+		// return an array of points
+		var rtnVal = [];
+		var newPoint = point;
+		var remainingCounts = patternSet.counts;
+		// var patternCounts = 0;
+		// var hitReference = false;
+		var buildRef = {x: null, y: null};
+		// let's start by checking if we began on the first reference point
+		// now check against the reference
+		buildRef = new Point({
+			x: ( patternSet.reference[0].dimension.x ? newPoint.x : patternSet.reference[0].point.x ),
+			y: ( patternSet.reference[0].dimension.y ? newPoint.y : patternSet.reference[0].point.y )
+		});
+
+		// Loop throught each pattern
+		for (var patternIdx = 0; patternIdx < patternSet.pattern.length; patternIdx++) {
+			var ptrn = patternSet.pattern[patternIdx];
+			var patternCounts = 0;
+			var hitReference = false;
+
+			// how many counts are in this pattern?
+			for (var mvSetIdx = 0; mvSetIdx < ptrn.length; mvSetIdx++) {
+				patternCounts += ptrn[mvSetIdx].counts;
+			}
+
+			// Do a pre-check to see if we happen to start on the reference point & we are on the first pattern
+			// only check on the first pattern because it is a pre-check after all
+			if (patternIdx == 0 && buildRef.subtract(patternSet.reference[patternIdx].point).length == 0) {
+				hitReference = true;
+			}
+
+			// If we haven't met the reference poinst AND we have enough counts for 1 more round through the pattern
+			// patternCounts > 0 is there to help prevent an infinit loop
+			while (!hitReference && remainingCounts >= patternCounts && patternCounts > 0) {
+				// apply the pattern
+				rtnVal = rtnVal.concat( Helpers.applyMoveSetArray(newPoint, ptrn) );
+				// reduce the remainingCounts
+				remainingCounts -= patternCounts;
+				// we need to set the starting point to be the last position in the rtnVal.
+				// it also needs to be a Point object
+				newPoint = new paper.Point(rtnVal[rtnVal.length-1]);
+
+				// now check against the reference
+				buildRef.x = ( patternSet.reference[patternIdx].dimension.x ? newPoint.x : patternSet.reference[patternIdx].point.x );
+				buildRef.y = ( patternSet.reference[patternIdx].dimension.y ? newPoint.y : patternSet.reference[patternIdx].point.y);
+				// the vector length of the difference betten this built Ref. point and the desired ref point
+				if (buildRef.subtract(patternSet.reference[patternIdx].point).length == 0) {
+					hitReference = true;
+				}
+			}
+
+			// There is a chance we never met the reference point, but still have remainingCounts if the pattern
+			// has more counts than there are remaining.
+			// IMPORTANT: This method assumes a full run through the pattern before finishing remaining.
+			// I should figure out a nice way to handle this situation, but I will assume Future Me can do Math correctly
+			// when building the patternSet.pattern
+			if (hitReference) {
+				// if we hit the reference, then it is time to move to the next pattern. So do nothing
+			} else {
+				// we ran out available counts to run a full Pattern, but we never found the reference point
+				console.log("[ Error: Not enough counts remaining to apply the full pattern. Remaining: "+remainingCounts+". Counts in full pattern: "+patternCounts+" ]");
+				// try to complete as much of this pattern as possible??
+			}
+
+			// ==============================================
+			// We have finished looping through the pattern,
+			// because we have met one of two conditions:
+			// 		1. We hit the reference point
+			//		2. we ran out of available counts
+			// ==============================================
+
+		}
+
+		// finish remaining counts using the final moveSet
+		patternSet.moveSet.counts = remainingCounts;
+		rtnVal = rtnVal.concat( Helpers.applyMoveSet(newPoint, patternSet.moveSet) );
+
+		return rtnVal;
+	}
+
+	// Version 3 of ApplyPatternSet is another restructure that handles multiple patterns, but allows for specifying if we care about a reference line for a pattern if a reference for a pattern is undefined or null, then apply the pattern 1 time and 1 time only.
+	static applyPatternSetV3(point, patternSet) {
+		// See SampleStructures.js for what patternSet should look like.
+		// return an array of points
+		var rtnVal = [];
+		var newPoint = point;
+		var remainingCounts = patternSet.counts;
+		var buildRef = new Point([0,0]);
+		
+
+		// Loop throught each pattern
+		for (var patternIdx = 0; patternIdx < patternSet.patterns.length; patternIdx++) {
+			var ptrnObj = patternSet.patterns[patternIdx];
+			var patternCounts = 0;
+			var hitReference = false;
+			var useReference = ((ptrnObj.reference !== undefined && ptrnObj.reference !== null) ? true : false);
+
+
+			// how many counts are in this pattern?
+			for (var mvSetIdx = 0; mvSetIdx < ptrnObj.pattern.length; mvSetIdx++) {
+				patternCounts += ptrnObj.pattern[mvSetIdx].counts;
+			}
+
+			// Do we use a reference for this pattern? If so, it's business as usual
+			if (useReference) {
+
+				// Do a pre-check to see if we happen to start on the reference point
+				buildRef.x = ( ptrnObj.reference.dimension.x ? newPoint.x : ptrnObj.reference.point.x );
+				buildRef.y = ( ptrnObj.reference.dimension.y ? newPoint.y : ptrnObj.reference.point.y);
+				if (/*patternIdx == 0 &&*/ buildRef.subtract(ptrnObj.reference.point).length == 0) {
+					hitReference = true;
+				}
+
+				// If we haven't met the reference poinst AND we have enough counts for 1 more round through the pattern
+				// patternCounts > 0 is there to help prevent an infinit loop
+				while (!hitReference && remainingCounts >= patternCounts && patternCounts > 0) {
+					// apply the pattern
+					rtnVal = rtnVal.concat( Helpers.applyMoveSetArray(newPoint, ptrnObj.pattern) );
+					// reduce the remainingCounts
+					remainingCounts -= patternCounts;
+					// we need to set the starting point to be the last position in the rtnVal.
+					// it also needs to be a Point object
+					newPoint = new paper.Point(rtnVal[rtnVal.length-1]);
+
+					// now check against the reference
+					buildRef.x = ( ptrnObj.reference.dimension.x ? newPoint.x : ptrnObj.reference.point.x );
+					buildRef.y = ( ptrnObj.reference.dimension.y ? newPoint.y : ptrnObj.reference.point.y);
+					// the vector length of the difference betten this built Ref. point and the desired ref point
+					if (buildRef.subtract(ptrnObj.reference.point).length == 0) {
+						hitReference = true;
+					}
+				}
+
+				// There is a chance we never met the reference point, but still have remainingCounts if the pattern
+				// has more counts than there are remaining.
+				// IMPORTANT: This method assumes a full run through the pattern before finishing remaining.
+				// I should figure out a nice way to handle this situation, but I will assume Future Me can do Math correctly
+				// when building the patternSet.pattern
+				if (hitReference) {
+					// if we hit the reference, then it is time to move to the next pattern. So do nothing
+				} else {
+					// we ran out available counts to run a full Pattern, but we never found the reference point
+					console.log("[ Error: Not enough counts remaining to apply the full pattern. Remaining: "+remainingCounts+". Counts in full pattern: "+patternCounts+" ]");
+					// try to complete as much of this pattern as possible??
+				}
+
+				// ==============================================
+				// We have finished looping through the pattern,
+				// because we have met one of two conditions:
+				// 		1. We hit the reference point
+				//		2. we ran out of available counts
+				// ==============================================
+
+			} else {
+				// This is when we do NOT use a reference for a pattern. In this case apply the pattern 1 time and 1 time only
+
+				if (remainingCounts >= patternCounts && patternCounts > 0) {
+					// apply the pattern
+					rtnVal = rtnVal.concat( Helpers.applyMoveSetArray(newPoint, ptrnObj.pattern) );
+					// reduce the remainingCounts
+					remainingCounts -= patternCounts;
+					// we need to set the starting point to be the last position in the rtnVal.
+					// it also needs to be a Point object
+					newPoint = new paper.Point(rtnVal[rtnVal.length-1]);
+				} else {
+					// we ran out available counts to run a full Pattern
+					console.log("[ Error: Not enough counts remaining to apply the full pattern. Remaining: "+remainingCounts+". Counts in full pattern: "+patternCounts+" ]");
+					// try to complete as much of this pattern as possible??
+				}
+
+			}
+
+		}
+
+		// finish remaining counts using the final moveSet
+		patternSet.moveSet.counts = remainingCounts;
+		rtnVal = rtnVal.concat( Helpers.applyMoveSet(newPoint, patternSet.moveSet) );
 
 		return rtnVal;
 	}

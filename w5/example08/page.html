@@ -1,0 +1,175 @@
+<link rel="stylesheet" type="text/css" href="../files/basic.css" />
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/Helpers.js"></script>
+
+<h1>PaperJs - Week 5 - Example 8</h1>
+<h2>Patterns in Move Sets?</h2>
+
+
+<div class="container">
+	It is common to do a Forward 2 - Mark 2 pattern until your reach a sideline, then switch to a regulare Forward March remain of the counts.
+</div>
+
+<canvas id="canvas" width="980" height="550"></canvas>
+
+<script type="text/javascript">
+	paper.install(window);
+	
+	window.onload = function() {
+		paper.setup('canvas');
+
+		Helpers.drawField(5);
+
+		// get a new layer for testing. it should auto set to activeLayer
+		var testLayer = new paper.Layer({
+			name: 'test'
+		});
+
+		var refStartingPos = project.getItem({name: 'back_sl_40_left'}).position.add([5*4,0]);
+		var diagStartingPos = project.getItem({name: 'back_sl_0_right'}).position;
+		var performers = [
+			{
+				initPos: refStartingPos,
+				perf: Helpers.drawPoint(refStartingPos.x, refStartingPos.y, 'X'),
+			},
+			{
+				initPos: refStartingPos.add([0,-5*2]),
+				perf: Helpers.drawPoint(refStartingPos.add([0,-5*2]).x, refStartingPos.add([0,-5*2]).y, 'X'),
+			},
+			{
+				initPos: refStartingPos.add([0,-5*4]),
+				perf: Helpers.drawPoint(refStartingPos.add([0,-5*4]).x, refStartingPos.add([0,-5*4]).y, 'X'),
+			},
+			{
+				initPos: refStartingPos.add([0,-5*6]),
+				perf: Helpers.drawPoint(refStartingPos.add([0,-5*6]).x, refStartingPos.add([0,-5*6]).y, 'X'),
+			},
+			// OBLIQUES
+			{
+				initPos: diagStartingPos.add([0,5*16]),
+				perf: Helpers.drawPoint(diagStartingPos.add([0,5*16]).x, diagStartingPos.add([0,5*16]).y, 'X'),
+			},
+			{
+				initPos: diagStartingPos.add([5*2,5*16]),
+				perf: Helpers.drawPoint(diagStartingPos.add([5*2,5*16]).x, diagStartingPos.add([5*2,5*16]).y, 'X'),
+			},
+			{
+				initPos: diagStartingPos.add([5*4,5*16]),
+				perf: Helpers.drawPoint(diagStartingPos.add([5*4,5*16]).x, diagStartingPos.add([5*4,5*16]).y, 'X'),
+			},
+			{
+				initPos: diagStartingPos.add([5*6,5*16]),
+				perf: Helpers.drawPoint(diagStartingPos.add([5*6,5*16]).x, diagStartingPos.add([5*6,5*16]).y, 'X'),
+			},
+		]
+
+		var movePattern = {
+			counts: 64,
+			pattern: [
+				{
+					move: Helpers.MOVE.FM,
+					counts: 2
+				},
+				{
+					move: Helpers.MOVE.MT,
+					counts: 6
+				},
+			],
+			reference: project.getItem({name: 'back_side_line'}).position,
+			dimension: {
+				x: false,
+				y: true
+			},
+			moveSet: {
+				move: Helpers.MOVE.FM,
+				counts: 4 // this should be over-written based on how many counts are remaining after running the patternSet through hitting the reference
+			},
+		}
+		console.log(movePattern);
+
+		
+		for (var i=0; i < 4; i++) {
+			performers[i].positionSet = Helpers.applyPatternSet(performers[i].initPos, movePattern);
+		}
+
+		// OBLIQUE MOVE PATTERN
+		movePattern = {
+			counts: 64,
+			pattern: [
+				{
+					move: Helpers.MOVE.RT,
+					counts: 2
+				},
+				{
+					move: Helpers.MOVE.MT,
+					counts: 2
+				},
+			],
+			reference: project.getItem({name: 'back_sl_0_right'}).position,
+			dimension: {
+				x: true,
+				y: false
+			},
+			moveSet: {
+				move: Helpers.OBLIQUE.FR,
+				counts: 4 // this should be over-written based on how many counts are remaining after running the patternSet through hitting the reference
+			},
+		}
+		for (var i=4; i < performers.length; i++) {
+			performers[i].positionSet = Helpers.applyPatternSet(performers[i].initPos, movePattern);
+		}
+		
+		console.log(performers);
+
+		// =============
+		// ANIMATION
+		// =============
+
+		var framesPerCount = 24;
+		var countMaxCount = movePattern.counts-1;
+		var countIteration = 0;
+		var loopDelay = 100;
+
+		view.onFrame = function(event) {
+			if (loopDelay == 0) { 
+
+				for (var i=0; i < performers.length; i++) {
+					var currentStartingPoint = new paper.Point( performers[i].positionSet[countIteration] );
+					
+					if (countIteration < countMaxCount) {
+						var destination = new paper.Point( performers[i].positionSet[countIteration+1] );
+						var vector = destination.subtract( currentStartingPoint );
+						// Let's slow this down
+
+						if (event.count > 0 && event.count % framesPerCount == 0) {
+							performers[i].perf.position = destination;
+						} else {
+							performers[i].perf.position = performers[i].perf.position.add(vector.divide(framesPerCount));
+						}
+					} else {
+						performers[i].perf.position = performers[i].initPos;
+					}		
+				}
+
+				// The View's onFrame handles determining the count.
+				if (countIteration < countMaxCount) {
+					// Let's slow this down
+					if (event.count > 0 && event.count % framesPerCount == 0) {
+						// after we move x framesPerCount, indicate that we have progressed to the next count.
+						// this will make sure we grab the correct "currentStartingPoint" and "destination" Points
+						countIteration++;
+					}
+				} else {
+					countIteration = 0; // this resets the animation to the starting COUNT
+					loopDelay = 100;
+				}
+			} else {
+				loopDelay--;
+			}
+			
+		}
+
+
+	}
+</script>
