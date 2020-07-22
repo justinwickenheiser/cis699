@@ -782,4 +782,22 @@ class Helpers {
 		return rtnVal;
 	}
 
+	static follow(leader, followerCurrent, counts, replaceEvery) {
+		// followerCurrent is a [x, y]
+		var startingIdx = leader.length-1-counts;
+		// leader is [ [x,y] ] (A positionSet for the leader)
+		var ftlPositions = leader.slice(startingIdx, startingIdx+counts);
+		var prefixPositions = [];
+		// we do not need to get the very last position (only get replaceEvery-1) because that position will be added by the leader.slice() return;
+		for (var i=1; i<replaceEvery; i++) {
+			var currentStartingPoint = new Point(followerCurrent);
+			var vector = new Point(ftlPositions[0]).subtract( currentStartingPoint );
+			var nextPoint = currentStartingPoint.add( (vector.divide(replaceEvery).multiply(i)) );
+			prefixPositions.push( [nextPoint.x, nextPoint.y] );
+		}
+		prefixPositions = prefixPositions.concat(ftlPositions);
+		return prefixPositions.slice(0, counts);
+
+	}
+
 }
