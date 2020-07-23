@@ -1,0 +1,186 @@
+<link rel="stylesheet" type="text/css" href="../files/basic.css" />
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" type="text/javascript"></script> <!-- jQuery Mousewheel plugin -->
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/PanZoom.js"></script>
+<script src="../files/Helpers.js"></script>
+
+<div id="non-print-container">
+	<h1>PaperJs - Week 6 - Example 1</h1>
+	<h2>Printing</h2>
+
+
+	<div class="container">
+		<p>
+			<code>alt + [scroll]</code> will Zoom.<br />
+			<code>shift + [scroll]</code> will Pan.<br />
+		</p>
+		<button onclick="Helpers.resetPanZoom();">Reset Zoom & Position</button>
+		<button onclick="Helpers.print(performers,5);">Print</button>
+	</div>
+
+	<canvas id="canvas" width="980" height="550"></canvas>
+</div>
+<div id="print-container">
+	some garbage
+</div>
+
+<script type="text/javascript">
+	paper.install(window);
+
+	var performers = []; // an arry of all performers
+
+	var framesPerCount = 24;
+	var countMaxCount = 24; // -1 because we don't move to the next position at the end, we jump directly back to the initial position.
+	var countIteration = 0;
+	var loopDelay = 100;
+	
+	window.onload = function() {
+		paper.setup('canvas');
+
+		Helpers.initPanZoom("canvas");
+		Helpers.drawField(5);
+
+		// get a new layer for testing. it should auto set to activeLayer
+		var testLayer = new paper.Layer({
+			name: 'test'
+		});
+
+		var pps = 5;
+
+		// let's set up some performers
+		var rows, cols, offset, perf, positionSet, initPos;
+		rows = 1;
+		cols = 8;
+		var charts = 5;
+		offset = project.getItem({name: 'back_sl_40_right'}).position;
+
+		perf = Helpers.drawPoint(offset.add([4*0*pps,24*pps]).x, offset.add([4*0*pps,24*pps]).y, 'X');
+		// positionSet is now a structure {chartId: [ array of points for counts ] }
+		perf.positionSet = {}
+		for (var i = 1; i <= charts; i++) {
+			perf.positionSet['c_'+i] = [];
+		}
+		perf.positionSet['c_1'].push([perf.position.x, perf.position.y]);
+		// chart 1: apply some moves:
+		initPos = new Point(perf.positionSet['c_1'][0]);
+		var instructions = Helpers.applyMoveSetArray( initPos, [
+			{
+				move: Helpers.MOVE.FM,
+				counts: 16,
+			},
+			{
+				move: Helpers.OBLIQUE.FL,
+				counts: 12,
+			},
+			{
+				move: Helpers.MOVE.MT,
+				counts: 4,
+			},
+			{
+				move: Helpers.MOVE.BM,
+				counts: 8,
+			},
+		] );
+		perf.positionSet['c_1'] = perf.positionSet['c_1'].concat(instructions);
+		// So the last position of chart N is the starting position of chart N+1
+		perf.positionSet['c_2'].push( perf.positionSet['c_1'][perf.positionSet['c_1'].length-1] );
+		initPos = new Point(perf.positionSet['c_2'][0]);
+		instructions = Helpers.applyMoveSetArray( initPos, [
+			{
+				move: Helpers.MOVE.RT,
+				counts: 68,
+			},
+		] );
+		perf.positionSet['c_2'] = perf.positionSet['c_2'].concat(instructions);
+		// So the last position of chart N is the starting position of chart N+1
+		perf.positionSet['c_3'].push( perf.positionSet['c_2'][perf.positionSet['c_2'].length-1] );
+		initPos = new Point(perf.positionSet['c_3'][0]);
+		instructions = Helpers.applyMoveSetArray( initPos, [
+			{
+				move: Helpers.MOVE.FM,
+				counts: 32,
+			},
+		] );
+		perf.positionSet['c_3'] = perf.positionSet['c_3'].concat(instructions);
+		// So the last position of chart N is the starting position of chart N+1
+		perf.positionSet['c_4'].push( perf.positionSet['c_3'][perf.positionSet['c_3'].length-1] );
+		initPos = new Point(perf.positionSet['c_4'][0]);
+		instructions = Helpers.applyMoveSetArray( initPos, [
+			{
+				move: Helpers.MOVE.LT,
+				counts: 16,
+			},
+			{
+				move: Helpers.MOVE.MT,
+				counts: 4,
+			},
+			{
+				move: Helpers.MOVE.LT,
+				counts: 16,
+			},
+		] );
+		perf.positionSet['c_4'] = perf.positionSet['c_4'].concat(instructions);
+		// So the last position of chart N is the starting position of chart N+1
+		perf.positionSet['c_5'].push( perf.positionSet['c_4'][perf.positionSet['c_4'].length-1] );
+		// I do not care about other moves in chart 5. I just need the initial spot
+		performers.push(perf);
+		// for (var r = 0; r < rows; r++) {
+		// 	for (var c = 0; c < cols; c++) {
+		// 		perf = Helpers.drawPoint(offset.add([4*c*pps,24*pps]).x, offset.add([4*c*pps,24*pps]).y, 'X');
+		// 		positionSet = [ [perf.position.x, perf.position.y] ]; // set the initial starting point as the first position
+		// 		perf.positionSet = positionSet;
+
+		// 		// Set up their animation
+		// 		perf.onFrame = function(event) {
+		// 			var performer = this;
+
+		// 			if (loopDelay == 0) { 
+
+		// 				if (countIteration < countMaxCount-1) {
+		// 					var currentStartingPoint = new paper.Point( performer.positionSet[countIteration] );
+		// 					var destination = new paper.Point( performer.positionSet[countIteration+1] );
+		// 					var vector = destination.subtract( currentStartingPoint );
+
+		// 					if (event.count % framesPerCount == 0) {
+		// 						performer.position = destination;
+		// 					} else {
+		// 						performer.position = performer.position.add(vector.divide(framesPerCount));
+		// 					}
+		// 				} else {
+		// 					performer.position = performer.positionSet[0];
+		// 				}
+		// 			}
+
+		// 		}
+		// 		performers.push(perf);
+		// 	}
+		// }
+
+
+
+		// =============
+		// ANIMATION
+		// =============
+
+		view.onFrame = function(event) {
+			if (loopDelay == 0) { 
+
+				if (countIteration < countMaxCount-1) {
+					if (event.count % framesPerCount == 0) {
+						// after we move x framesPerCount, indicate that we have progressed to the next count.
+						// this will make sure we grab the correct "currentStartingPoint" and "destination" Points
+						countIteration++;
+					}
+				} else {
+					countIteration = 0; // this resets the animation to the starting COUNT
+					loopDelay = 100;
+				}
+			} else {
+				loopDelay--;
+			}
+			
+		}
+
+	}
+</script>

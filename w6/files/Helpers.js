@@ -800,4 +800,40 @@ class Helpers {
 
 	}
 
+
+	static print(performers, charts) {
+		// sounds like I need a new PaperScope
+		var printScope = new paper.PaperScope();
+		$('#non-print-container').hide();
+		$('#print-container').empty();
+		var canvas;
+
+		for (var i=1; i<=charts; i++) {
+			canvas = $('<canvas>', {
+				id: 'canvas_'+i,
+				width: 980,
+				height: 550
+			});
+
+			$('#print-container').append(canvas);
+			$('#print-container').append($('<hr />'));
+
+			// The set up has to happen after the canvas is appended to DOM
+			printScope.setup('canvas_'+i);
+
+			Helpers.drawField(5);
+
+			var performerLayer = new printScope.Layer({
+				name: 'performer'
+			});
+
+			// Now that the layer has the performers, we need to set each performers position (PointText.position) --> visial placement in canvas
+			for (var perf=0; perf<performers.length; perf++) {
+				var chartInitPos = performers[perf].positionSet['c_'+i][0];
+				Helpers.drawPoint(chartInitPos[0], chartInitPos[1], performers[perf].content);
+			}
+
+		}
+	}
+
 }
