@@ -1,0 +1,113 @@
+<link rel="stylesheet" type="text/css" href="../files/basic.css" />
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" type="text/javascript"></script> <!-- jQuery Mousewheel plugin -->
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/PanZoom.js"></script>
+<script src="../files/HelpersV2.js"></script>
+
+<script type="text/javascript">
+	function drawSelection() {
+		view.onMouseDown = function(event) {
+			// If we produced a path before, deselect it:
+			if (selectionPath) {
+				selectionPath.selected = false;
+				selectionPath.remove();
+			}
+
+			// Create a new path and set its stroke color to black:
+			selectionPath = new paper.Path({
+				segments: [event.point],
+				strokeColor: 'black'
+			});
+		}
+
+		view.onMouseDrag = function(event) {
+			selectionPath.add(event.point);
+		}
+
+		view.onMouseUp = function(event) {
+			// When the mouse is released, simplify it:
+			selectionPath.closePath();
+			selectionPath.simplify(10);
+			// loop over each performer and check if it resides in the selection
+			for (var p = 0; p < performers.length; p++) {
+				if ( selectionPath.contains(performers[p].position) ) {
+					performers[p].selected = true;
+				} else {
+					performers[p].selected = false;
+				}
+			}
+		}
+	}
+
+	function stopSelection() {
+		view.onMouseDown = null;
+		view.onMouseDrag = null;
+		view.onMouseUp = null;
+	}
+</script>
+
+<h1>PaperJs - Week 6 - Example 6</h1>
+<h2>Selecting w/ Drawing</h2>
+
+
+<div class="container">
+	<p>
+		<code>alt + [scroll]</code> will Zoom.<br />
+		<code>shift + [scroll]</code> will Pan.<br />
+	</p>
+	<button onclick="Helpers.resetPanZoom();">Reset Zoom & Position</button>
+	<button onclick="drawSelection();">Draw Selection</button>
+	<button onclick="stopSelection();">Stop Selection</button>
+</div>
+
+<canvas id="canvas" width="980" height="550"></canvas>
+
+<script type="text/javascript">
+	paper.install(window);
+
+	var performers = []; // an arry of all performers
+	var selectionPath;
+
+	var framesPerCount = 24;
+	var countMaxCount = 24; // -1 because we don't move to the next position at the end, we jump directly back to the initial position.
+	var countIteration = 0;
+	var loopDelay = 100;
+	
+	window.onload = function() {
+		paper.setup('canvas');
+
+		Helpers.initPanZoom("canvas");
+		Helpers.drawField(5);
+
+		var performerLayer = new paper.Layer({
+			name: 'performer'
+		});
+
+		var pps = 5;
+
+		var rows, cols, offset, perf, initPos, positionSet;
+		var replaceEvery = 4;
+		rows = 1;
+		cols = 8;
+		offset = project.getItem({name: 'back_sl_40_right'}).position;
+		for (var r = 0; r < rows; r++) {
+			for (var c = 0; c < cols; c++) {
+				perf = Helpers.drawPoint(offset.add([4*c*pps,24*pps]).x, offset.add([4*c*pps,24*pps]).y, 'X');
+				// make the performer moveable
+				perf.onMouseDrag = function(event) {
+					if (event.event.shiftKey) {
+						// "snap to grid. i.e. round to something divisible by pps"
+						this.position = [Math.round(event.point.x/pps)*pps, Math.round(event.point.y/pps)*pps];
+					} else {
+						this.position = this.position.add(event.delta);
+					}
+					
+				}
+				performers.push(perf);
+			}
+		}
+	}
+
+	
+</script>
