@@ -22,6 +22,11 @@ class Helpers {
 		COLLEGE: 8,
 		HS: 9,
 	};
+	static ASSIGN_FN = {
+		ONE_TO_ONE: 15,
+		SHORTEST_ONE_LOOP: 16,
+		SHORTEST_TWO_LOOP: 17,
+	}
 
 	// pps: Pixels per Step
 	static drawField(pps, obj) {
@@ -412,7 +417,8 @@ class Helpers {
 					center: center,
 					radius: vector,
 					strokeColor: 'black',
-					parent: layer
+					parent: layer,
+					name: 'refCircle'
 				});
 			}
 
@@ -424,7 +430,7 @@ class Helpers {
 					obj.type = 'reference';
 				}
 
-				for (var i = 0; i <= obj.numPositions; i++) {
+				for (var i = 0; i < obj.numPositions; i++) {
 					var offset = path.length / obj.numPositions;
 					var point = path.getPointAt(offset * i);
 					if (obj.type == 'reference') {
@@ -477,7 +483,12 @@ class Helpers {
 
 				for (var r = 0; r < rows; r++) {
 					for (var c = 0; c < cols; c++) {
-						Helpers.drawPoint(from.add([obj.spacingLT*c*pps,obj.spacingFB*r*pps]).x, from.add([obj.spacingLT*c*pps,obj.spacingFB*r*pps]).y, 'X');
+						if (obj.type == 'reference') {
+							Helpers.drawReference(from.add([obj.spacingLT*c*pps,obj.spacingFB*r*pps]).x, from.add([obj.spacingLT*c*pps,obj.spacingFB*r*pps]).y);
+						} else {
+							Helpers.drawPoint(from.add([obj.spacingLT*c*pps,obj.spacingFB*r*pps]).x, from.add([obj.spacingLT*c*pps,obj.spacingFB*r*pps]).y, 'X');
+						}
+						
 					}
 				}
 				path.remove();
@@ -713,7 +724,6 @@ class Helpers {
 
 	}
 
-
 	static print(performers, charts) {
 		// sounds like I need a new PaperScope
 		var printScope = new paper.PaperScope();
@@ -747,6 +757,53 @@ class Helpers {
 			}
 
 		}
+	}
+
+	static getDistToRefForPerformers(performers, refPts, assignFn) {
+		// performers is an array of PointText objects
+		// refPts will most likely be an array of Path objects (tiny circles w/ positions at the points)
+		var rtnVal = {}, tmp = {};
+		var position, destination;
+		var claimedPoints = {};
+		for (var i = 0; i < refPts.length; i++) {
+			claimedPoints["pt_"+i] = false;
+		}
+
+		if (assignFn == Helpers.ASSIGN_FN.ONE_TO_ONE) {
+			for (var p = 0; p < performers.length; p++) {
+				rtnVal["p_"+p] = refPts[p].position;
+			}
+		} else if (assignFn == Helpers.ASSIGN_FN.SHORTEST_ONE_LOOP) {
+			// for every performer, get it's distance to each reference point
+			for (var p = 0; p < performers.length; p++) {
+				tmp["p_"+p] = [];
+				position = performers[p].position;
+				for (var i = 0; i < refPts.length; i++) {
+					destination = refPts[i].position;
+					tmp["p_"+p].push( {idx: i, dist: destination.subtract( position ).length });
+				}
+				// now sort the array of lengths
+				tmp["p_"+p].sort(function(a, b) {
+					return a.dist - b.dist
+				});
+			}
+			var idx;
+			// now loop through each performer again and take the shortest distanced point. claim it
+			for (var p = 0; p < performers.length; p++) {
+				for (var i = 0; i < refPts.length; i++) {
+					idx = tmp["p_"+p][i].idx;
+					if (!claimedPoints["pt_"+idx]) {
+						claimedPoints["pt_"+idx] = true;
+						rtnVal["p_"+p] = refPts[idx].position;
+						break;
+					}
+				}
+			}
+		}
+
+
+
+		return rtnVal;
 	}
 
 }

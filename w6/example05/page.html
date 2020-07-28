@@ -1,0 +1,211 @@
+<link rel="stylesheet" type="text/css" href="../files/basic.css" />
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js" type="text/javascript"></script> <!-- jQuery Mousewheel plugin -->
+<script src="../../paperjs-v0.12.11/dist/paper-core.js"></script>
+<script src="../files/PanZoom.js"></script>
+<script src="../files/HelpersV2.js"></script>
+
+<script type="text/javascript">
+	function setFnSet() {
+		var shape = $('#shape').val();
+
+		if (shape === 'circle') {
+			$('#numPositionsContainer').show();
+			$('#spacingFBContainer').hide();
+			$('#spacingLTContainer').hide();
+		} else {
+			$('#numPositionsContainer').hide();
+			$('#spacingFBContainer').show();
+			$('#spacingLTContainer').show();
+		}
+		var numPositions = parseInt($('#numPositions').val());
+		var spacingFB = parseInt($('#spacingFB').val());
+		var spacingLT = parseInt($('#spacingLT').val());
+		var type = $('#type').val();
+
+		var fnSet = Helpers.getFnSet(shape,{
+			numPositions: numPositions,
+			spacingLT: spacingLT,
+			spacingFB: spacingFB,
+			type: type
+		});
+
+		view.onMouseDown = fnSet.onMouseDown;
+		view.onMouseDrag = fnSet.onMouseDrag;
+		view.onMouseUp = fnSet.onMouseUp;
+	}
+
+	function toggleAnimation() {
+		if (isAnimation) {
+			view.onFrame = null;
+		} else {
+			view.onFrame = function(event) {
+				if (loopDelay == 0) { 
+
+					if (countIteration < countMaxCount-1) {
+						if (event.count % framesPerCount == 0) {
+							// after we move x framesPerCount, indicate that we have progressed to the next count.
+							// this will make sure we grab the correct "currentStartingPoint" and "destination" Points
+							countIteration++;
+						}
+					} else {
+						countIteration = 0; // this resets the animation to the starting COUNT
+						loopDelay = 100;
+					}
+				} else {
+					loopDelay--;
+				}
+				
+			}
+		}
+		isAnimation = !isAnimation;
+	}
+
+	function assignToReference() {
+		var positions = Helpers.getDistToRefForPerformers(performers, project.layers.drawings.children, Helpers.ASSIGN_FN.ONE_TO_ONE);
+		for (var p = 0; p < performers.length; p++) {
+			performers[p].positionSet.push([positions["p_"+p].x, positions["p_"+p].y]);
+		}
+	}
+</script>
+
+<h1>PaperJs - Week 6 - Example 5</h1>
+<h2>Moving to Reference Points</h2>
+
+
+<div class="container">
+	<p>
+		Note: Holding Shift when clicking & dragging will snap to grid
+	</p>
+	<p>
+		<code>alt + [scroll]</code> will Zoom.<br />
+		<code>shift + [scroll]</code> will Pan.<br />
+	</p>
+	<button onclick="Helpers.resetPanZoom();">Reset Zoom & Position</button>
+	<div>
+		<p style="display: inline;">
+			<label for="shape">
+				Shape
+			</label>
+			<select id="shape" onchange="setFnSet();">
+				<option value="circle">Circle</option>
+				<option value="rectangle">Rectangle</option>
+			</select>
+		</p>
+		<p id="numPositionsContainer" style="display: inline;">
+			<label for="numPositions">
+				Number of Positions
+			</label>
+			<input type="text" name="numPositions" id="numPositions" value="20" onchange="setFnSet();" />
+		</p>
+		<p id="spacingFBContainer" style="display: inline;">
+			<label for="spacingFB">
+				Spacing Front-to-Back
+			</label>
+			<select id="spacingFB" onchange="setFnSet();">
+				<option value="1">1 Step</option>
+				<option value="2">2 Step</option>
+				<option value="3">3 Step</option>
+				<option value="4" selected="selected">4 Step</option>
+				<option value="5">5 Step</option>
+				<option value="6">6 Step</option>
+				<option value="7">7 Step</option>
+				<option value="8">8 Step</option>
+			</select>
+		</p>
+		<p id="spacingLTContainer" style="display: inline;">
+			<label for="spacingLT">
+				Spacing Left-to-Right
+			</label>
+			<select id="spacingLT" onchange="setFnSet();">
+				<option value="1">1 Step</option>
+				<option value="2">2 Step</option>
+				<option value="3">3 Step</option>
+				<option value="4" selected="selected">4 Step</option>
+				<option value="5">5 Step</option>
+				<option value="6">6 Step</option>
+				<option value="7">7 Step</option>
+				<option value="8">8 Step</option>
+			</select>
+		</p>
+		<p style="display: inline;">
+			<label for="type">
+				Type
+			</label>
+			<select id="type" onchange="setFnSet();">
+				<option value="reference">Reference</option>
+				<option value="performer">Performer</option>
+			</select>
+		</p>
+	</div>
+	<div>
+		<br />
+		<button onclick="assignToReference();">Assign To Reference Positions</button>
+		<button onclick="toggleAnimation();">Toggle Animation</button>
+	</div>
+</div>
+
+<canvas id="canvas" width="980" height="550"></canvas>
+
+<script type="text/javascript">
+	paper.install(window);
+
+	var performers = []; // an arry of all performers
+
+	var framesPerCount = 24;
+	var countMaxCount = 2; // -1 because we don't move to the next position at the end, we jump directly back to the initial position.
+	var countIteration = 0;
+	var loopDelay = 100;
+	var isAnimation = false;
+	
+	window.onload = function() {
+		paper.setup('canvas');
+
+		Helpers.initPanZoom("canvas");
+		Helpers.drawField(5);
+
+		// get a new layer for testing. it should auto set to activeLayer
+		var performerLayer = new paper.Layer({
+			name: 'performer'
+		});
+
+		var pps = 5;
+		var rows, cols, offset, perf, initPos, positionSet;
+		rows = 1;
+		cols = 8;
+		offset = project.getItem({name: 'back_sl_40_right'}).position;
+		for (var r = 0; r < rows; r++) {
+			for (var c = 0; c < cols; c++) {
+				perf = Helpers.drawPoint(offset.add([4*c*pps,24*pps]).x, offset.add([4*c*pps,24*pps]).y, 'X');
+				positionSet = [ [perf.position.x, perf.position.y] ]; // set the initial starting point as the first position
+				perf.positionSet = positionSet;
+
+				// Set up their animation
+				perf.onFrame = function(event) {
+					var performer = this;
+
+					if (loopDelay == 0) { 
+
+						if (countIteration < countMaxCount-1) {
+							var currentStartingPoint = new paper.Point( performer.positionSet[countIteration] );
+							var destination = new paper.Point( performer.positionSet[countIteration+1] );
+							var vector = destination.subtract( currentStartingPoint );
+
+							if (event.count % framesPerCount == 0) {
+								performer.position = destination;
+							} else {
+								performer.position = performer.position.add(vector.divide(framesPerCount));
+							}
+						} else {
+							performer.position = performer.positionSet[0];
+						}
+					}
+
+				}
+				performers.push(perf);
+			}
+		}
+
+		setFnSet();
+	}
+</script>
